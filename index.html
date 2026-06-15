@@ -1,0 +1,2387 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Хуулийн Туслах</title>
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Хуулийн Туслах">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='30' fill='%231a1a2e'/><text x='90' y='130' text-anchor='middle' font-size='100'>⚖️</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
+
+.header{background:#1a1a2e;color:#fff;padding:13px 24px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:17px;font-weight:700}
+.header p{font-size:11px;opacity:.6;margin-top:1px}
+.key-row{display:flex;align-items:center;gap:7px}
+.key-dot{width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;transition:background .3s}
+.key-dot.ok{background:#22c55e}
+#apiKey{padding:6px 10px;border:1.5px solid #ffffff33;border-radius:6px;background:#ffffff15;color:#fff;font-size:12px;font-family:monospace;width:270px}
+#apiKey::placeholder{color:#ffffff55}
+#apiKey:focus{outline:none;border-color:#60a5fa}
+
+.nav{background:#fff;border-bottom:2px solid #e5e7eb;display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nb{padding:13px 16px;border:none;background:transparent;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;flex-shrink:0}
+.nb:hover{color:#1a1a2e}
+.nb.active{color:#1a1a2e;border-bottom-color:#1a1a2e}
+
+.wrap{max-width:940px;margin:22px auto;padding:0 16px 60px}
+
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:15px;box-shadow:0 1px 5px rgba(0,0,0,.07)}
+.ct{font-size:12px;font-weight:700;color:#374151;margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:6px}
+
+.stabs{display:flex;gap:3px;background:#f1f5f9;padding:3px;border-radius:9px;margin-bottom:16px}
+.stab{flex:1;padding:8px;border:none;background:transparent;border-radius:7px;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .18s;text-align:center}
+.stab.active{background:#fff;color:#1a1a2e;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+.dz{border:2px dashed #d1d5db;border-radius:9px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa}
+.dz:hover,.dz.drag{border-color:#2563eb;background:#eff6ff}
+.dz-icon{font-size:28px;margin-bottom:5px}
+.dz p{color:#6b7280;font-size:13px}
+.dz strong{color:#2563eb}
+.fb{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:7px 12px;font-size:12px;color:#166534;display:flex;align-items:center;gap:6px;margin-top:8px}
+
+.or{text-align:center;color:#9ca3af;font-size:12px;margin:12px 0;position:relative}
+.or::before,.or::after{content:'';position:absolute;top:50%;width:45%;height:1px;background:#e5e7eb}
+.or::before{left:0}.or::after{right:0}
+
+textarea{width:100%;padding:11px;border:1.5px solid #d1d5db;border-radius:8px;font-size:13px;line-height:1.65;resize:vertical;font-family:inherit;min-height:120px}
+textarea:focus{outline:none;border-color:#2563eb}
+textarea.tall{min-height:200px}
+textarea.short{min-height:75px}
+
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:13px}
+@media(max-width:600px){.frow,.frow3{grid-template-columns:1fr}}
+label.lbl{display:block;font-size:11px;font-weight:700;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+select,input.inp{width:100%;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:13px;background:#fff;color:#1a1a2e}
+select:focus,input.inp:focus{outline:none;border-color:#2563eb}
+
+.btn{background:#1a1a2e;color:#fff;border:none;padding:13px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:background .2s;margin-top:2px}
+.btn:hover{background:#2d2d4e}
+.btn:disabled{background:#9ca3af;cursor:not-allowed}
+.btn-o{background:#fff;color:#1a1a2e;border:1.5px solid #1a1a2e;padding:8px 15px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;margin-right:7px;margin-top:12px}
+.btn-o:hover{background:#f1f5f9}
+
+.spin-box{text-align:center;padding:36px}
+.spinner{width:34px;height:34px;border:4px solid #e5e7eb;border-top-color:#1a1a2e;border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.spin-box p{color:#6b7280;font-size:13px}
+.spin-box small{color:#9ca3af;font-size:11px}
+
+/* ── Rendered markdown output ── */
+.md-out{font-size:13.5px;line-height:1.85;color:#1e293b;padding:4px 0}
+.md-out h1{font-size:17px;font-weight:800;color:#1a1a2e;margin:18px 0 8px;padding-bottom:6px;border-bottom:2px solid #e5e7eb}
+.md-out h2{font-size:15px;font-weight:700;color:#1a1a2e;margin:16px 0 7px;padding-bottom:4px;border-bottom:1.5px solid #e5e7eb}
+.md-out h3{font-size:13.5px;font-weight:700;color:#374151;margin:14px 0 6px}
+.md-out h4{font-size:13px;font-weight:700;color:#374151;margin:10px 0 4px}
+.md-out p{margin:5px 0 8px}
+.md-out ul,.md-out ol{padding-left:20px;margin:5px 0 10px}
+.md-out li{margin:3px 0;line-height:1.7}
+.md-out strong{font-weight:700;color:#1a1a2e}
+.md-out em{color:#374151}
+.md-out table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.5px}
+.md-out th{background:#1a1a2e;color:#fff;padding:8px 10px;text-align:left;font-weight:600;font-size:12px}
+.md-out td{padding:7px 10px;border-bottom:1px solid #e5e7eb;vertical-align:top}
+.md-out tr:nth-child(even) td{background:#f8fafc}
+.md-out hr{border:none;border-top:1.5px solid #e5e7eb;margin:14px 0}
+.md-out blockquote{border-left:3px solid #3b82f6;padding:8px 14px;background:#eff6ff;border-radius:0 6px 6px 0;margin:8px 0;color:#1e40af;font-size:13px}
+.md-out code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px}
+.md-out pre{background:#1e293b;color:#e2e8f0;padding:12px;border-radius:8px;overflow-x:auto;font-size:12px;line-height:1.6;margin:8px 0}
+
+.result-card{background:#fff;border-radius:12px;padding:22px;margin-bottom:15px;box-shadow:0 1px 5px rgba(0,0,0,.07)}
+.score-row{display:flex;align-items:center;gap:16px;background:#f8fafc;border-radius:9px;padding:15px;margin-bottom:16px}
+.score-circle{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;flex-shrink:0}
+.sc-g{background:linear-gradient(135deg,#16a34a,#22c55e)}
+.sc-y{background:linear-gradient(135deg,#d97706,#f59e0b)}
+.sc-r{background:linear-gradient(135deg,#dc2626,#ef4444)}
+
+.linfo{font-size:11px;color:#6b7280;margin-top:12px;padding:7px 10px;background:#eff6ff;border-radius:6px;border-left:3px solid #3b82f6}
+
+.extract-box{background:#1e293b;color:#e2e8f0;border-radius:8px;padding:14px;font-size:12px;line-height:1.7;max-height:320px;overflow-y:auto;font-family:monospace;white-space:pre-wrap;margin-top:10px}
+
+/* ── Calendar & Gmail styles ── */
+.g-btn{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #dadce0;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:14px;font-weight:500;color:#3c4043;margin:0 auto 20px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.g-btn:hover{background:#f8f9fa;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.g-btn svg{width:20px;height:20px}
+.ev-card{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:10px;border-left:4px solid #4285f4;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.ev-card.today{border-left-color:#34a853}
+.ev-title{font-weight:600;font-size:14px;color:#1a1a2e;margin-bottom:6px}
+.ev-time{font-size:12px;color:#5f6368;display:flex;gap:16px;flex-wrap:wrap}
+.ev-time span{display:flex;align-items:center;gap:4px}
+.ev-loc{font-size:12px;color:#9ca3af;margin-top:4px}
+.day-hdr{font-size:12px;font-weight:700;color:#2563eb;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+.ml-card{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:4px solid #e5e7eb}
+.ml-card.urgent{border-left-color:#ef4444}
+.ml-card.reply{border-left-color:#f59e0b}
+.ml-card.info{border-left-color:#6b7280}
+.ml-from{font-size:13px;font-weight:600;color:#1a1a2e}
+.ml-subj{font-size:13px;color:#374151;margin:3px 0}
+.ml-snippet{font-size:12px;color:#6b7280;margin-bottom:8px}
+.ml-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-bottom:6px}
+.ml-badge.urgent{background:#fee2e2;color:#dc2626}
+.ml-badge.reply{background:#fef3c7;color:#d97706}
+.ml-badge.info{background:#f3f4f6;color:#6b7280}
+.ml-actions{display:flex;gap:8px;margin-top:8px}
+.ml-actions button{font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer}
+.ml-actions button:hover{background:#e5e7eb}
+.reply-box{background:#f8fafc;border-radius:8px;padding:12px;margin-top:10px;border:1px solid #e2e8f0}
+.reply-box textarea{width:100%;min-height:100px;border:1px solid #d1d5db;border-radius:6px;padding:8px;font-size:13px;resize:vertical;margin-bottom:8px}
+.tz-note{font-size:11px;color:#9ca3af;text-align:center;margin-bottom:12px}
+.refresh-btn{float:right;font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer;margin-bottom:10px}
+
+.hidden{display:none}
+.sec{display:none}.sec.active{display:block}
+.pane{display:none}.pane.active{display:block}
+
+.prog-wrap{margin-top:10px}
+.prog-bar{width:100%;background:#e5e7eb;border-radius:4px;height:5px}
+.prog-fill{background:#2563eb;border-radius:4px;height:5px;transition:width .3s}
+.prog-lbl{font-size:11px;color:#6b7280;margin-top:3px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>⚖️ Хуулийн Туслах</h1>
+    <p>Гэрээ · Файл хөрвүүлэх · Шүүхийн бэлтгэл</p>
+  </div>
+  <div class="key-row">
+    <div class="key-dot" id="kd"></div>
+    <input type="password" id="apiKey" placeholder="sk-ant-... API key" oninput="onKey()"/>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nb active" onclick="goSec('contracts',this)">📋 Гэрээ</button>
+  <button class="nb" onclick="goSec('convert',this)">🔄 Файл</button>
+  <button class="nb" onclick="goSec('court',this)">🏛️ Шүүх</button>
+  <button class="nb" onclick="goSec('translate',this)">🌐 Орчуулга</button>
+  <button class="nb" onclick="goSec('comm',this)">📬 Харилцаа</button>
+  <button class="nb" onclick="goSec('growth',this)">📰 Мэдээ</button>
+</div>
+
+<div class="wrap">
+
+<!-- ═══════════ SECTION 1: CONTRACTS ═══════════ -->
+<div class="sec active" id="sec-contracts">
+  <div class="stabs">
+    <button class="stab active" onclick="goPane('c','review',this)">🔍 Гэрээ хянах</button>
+    <button class="stab" onclick="goPane('c','suggest',this)">✏️ Санал боловсруулах</button>
+    <button class="stab" onclick="goPane('c','draft',this)">📝 Гэрээний төсөл</button>
+  </div>
+
+  <!-- REVIEW -->
+  <div class="pane active" id="c-review">
+    <div class="card">
+      <div class="ct">📄 Гэрээний баримт бичиг</div>
+      <div class="dz" id="rv-z"><div class="dz-icon">📂</div>
+        <p><strong>Дарж сонгох</strong> эсвэл чирэх &nbsp;(.docx · .pdf · .txt)</p>
+        <input type="file" id="rv-f" accept=".docx,.doc,.txt,.pdf" style="display:none"/></div>
+      <div class="fb hidden" id="rv-b">📄 <span id="rv-fn"></span></div>
+      <div class="or">эсвэл текст paste хийх</div>
+      <textarea id="rv-t" placeholder="Гэрээний бүрэн текстийг энд оруулна уу..."></textarea>
+    </div>
+    <div class="card">
+      <div class="ct">⚙️ Тохиргоо</div>
+      <div class="frow3">
+        <div><label class="lbl">Гэрээний төрөл</label>
+          <select id="rv-ct"><option value="auto">Автомат илрүүлэх</option>
+            <option>Худалдах-худалдан авах гэрээ</option><option>Хөдөлмөрийн гэрээ</option>
+            <option>Түрээсийн гэрээ</option><option>Үйлчилгээний гэрээ</option>
+            <option>Зээлийн гэрээ</option><option>Хамтын ажиллагааны гэрээ</option>
+            <option>Олон улсын худалдааны гэрээ</option></select></div>
+        <div><label class="lbl">Хуулийн хүрээ</label>
+          <select id="rv-j"><option value="mn">Монголын хууль</option>
+            <option value="intl">Олон улсын стандарт</option>
+            <option value="both">Хоёуланг нь</option></select></div>
+        <div><label class="lbl">AI загвар</label>
+          <select id="rv-m">
+            <option value="claude-opus-4-8">Opus — хамгийн сайн</option>
+            <option value="claude-sonnet-4-6" selected>Sonnet — нарийн</option>
+            <option value="claude-haiku-4-5-20251001">Haiku — хурдан</option></select></div>
+      </div>
+    </div>
+    <button class="btn" id="rv-btn" onclick="doReview()">🔍 Гэрээ хянах</button>
+    <div class="card hidden" id="rv-load"><div class="spin-box"><div class="spinner"></div><p>Гэрээг нарийвчлан хянаж байна...</p><small>legalinfo.mn хуулиудад нийцүүлж байна</small></div></div>
+    <div class="result-card hidden" id="rv-res">
+      <div class="ct">📊 Хяналтын тайлан</div>
+      <div class="md-out" id="rv-out"></div>
+      <div class="linfo">💡 Хуулийн иш татлагыг <strong>legalinfo.mn</strong>-ээс нягтлаарай.</div>
+      <button class="btn-o" onclick="dlDoc('rv-out','гэрээ_хяналт')">⬇️ Word татах</button>
+      <button class="btn-o" onclick="dlTxt('rv-out','гэрээ_хяналт')">⬇️ .txt татах</button>
+    </div>
+  </div>
+
+  <!-- SUGGEST -->
+  <div class="pane hidden" id="c-suggest">
+    <div class="card">
+      <div class="ct">📄 Засвар оруулах гэрээ</div>
+      <div class="dz" id="sg-z"><div class="dz-icon">📂</div>
+        <p><strong>Дарж сонгох</strong> эсвэл чирэх</p>
+        <input type="file" id="sg-f" accept=".docx,.doc,.txt,.pdf" style="display:none"/></div>
+      <div class="fb hidden" id="sg-b">📄 <span id="sg-fn"></span></div>
+      <div class="or">эсвэл текст paste хийх</div>
+      <textarea id="sg-t" placeholder="Засвар оруулах гэрээний текст..."></textarea>
+    </div>
+    <div class="card">
+      <div class="ct">💡 Засварын чиглэл</div>
+      <textarea class="short" id="sg-dir" placeholder="Засварын чиглэл, онцлог хүсэлтийг бичнэ үү. Жишээ: нэхэмжлэгчийн талд хамгаалах, хариуцлагын заалтыг хүчтэй болгох, торгуулийн хэмжээ нэмэх..."></textarea>
+      <div class="frow" style="margin-top:12px">
+        <div><label class="lbl">Чиглэл</label>
+          <select id="sg-s"><option value="balanced">Тэнцвэртэй</option>
+            <option value="party1">Нэхэмжлэгчийн / Нэг талын талд</option>
+            <option value="party2">Хариуцагчийн / Нөгөө талын талд</option></select></div>
+        <div><label class="lbl">AI загвар</label>
+          <select id="sg-m">
+            <option value="claude-opus-4-8">Opus — хамгийн сайн</option>
+            <option value="claude-sonnet-4-6" selected>Sonnet</option>
+            <option value="claude-haiku-4-5-20251001">Haiku</option></select></div>
+      </div>
+    </div>
+    <button class="btn" id="sg-btn" onclick="doSuggest()">✏️ Засварын санал боловсруулах</button>
+    <div class="card hidden" id="sg-load"><div class="spin-box"><div class="spinner"></div><p>Засварын санал боловсруулж байна...</p></div></div>
+    <div class="result-card hidden" id="sg-res">
+      <div class="ct">✏️ Засварын санал</div>
+      <div class="md-out" id="sg-out"></div>
+      <div class="linfo">💡 Хуулийн иш татлагыг <strong>legalinfo.mn</strong>-ээс нягтлаарай.</div>
+      <button class="btn-o" onclick="dlDoc('sg-out','гэрээ_засвар')">⬇️ Word татах</button>
+      <button class="btn-o" onclick="dlTxt('sg-out','гэрээ_засвар')">⬇️ .txt татах</button>
+    </div>
+  </div>
+
+  <!-- DRAFT -->
+  <div class="pane hidden" id="c-draft">
+    <div class="card">
+      <div class="ct">📝 Гэрээний мэдээлэл оруулах</div>
+      <div class="frow">
+        <div><label class="lbl">Гэрээний төрөл</label>
+          <select id="dr-t"><option>Худалдах-худалдан авах гэрээ</option>
+            <option>Хөдөлмөрийн гэрээ</option><option>Түрээсийн гэрээ</option>
+            <option>Үйлчилгээний гэрээ</option><option>Зээлийн гэрээ</option>
+            <option>Хамтын ажиллагааны гэрээ</option><option>Нийлүүлэлтийн гэрээ</option>
+            <option>Оюуны өмч шилжүүлэх гэрээ</option></select></div>
+        <div><label class="lbl">Гэрээний хэл</label>
+          <select id="dr-l"><option value="mn">Монгол хэл</option>
+            <option value="en">English</option>
+            <option value="both">Монгол + Англи (хавсарсан)</option></select></div>
+      </div>
+      <div class="frow">
+        <div><label class="lbl">Нэг тал (нэр/байгууллага)</label>
+          <input class="inp" id="dr-p1" placeholder="ХХК-ийн нэр эсвэл иргэний нэр..."/></div>
+        <div><label class="lbl">Нөгөө тал</label>
+          <input class="inp" id="dr-p2" placeholder="ХХК-ийн нэр эсвэл иргэний нэр..."/></div>
+      </div>
+      <label class="lbl">Гэрээний гол нөхцөл, онцлог шаардлага</label>
+      <textarea id="dr-d" placeholder="Үнэ, хугацаа, байршил, онцлог шаардлага, торгуулийн нөхцөл, маргаан шийдвэрлэх журам г.м. бүрэн бичнэ үү..."></textarea>
+      <div style="margin-top:12px"><label class="lbl">AI загвар</label>
+        <select id="dr-m" style="width:210px">
+          <option value="claude-opus-4-8">Opus (хамгийн сайн)</option>
+          <option value="claude-sonnet-4-6" selected>Sonnet (нарийн)</option>
+          <option value="claude-haiku-4-5-20251001">Haiku (хурдан)</option></select></div>
+    </div>
+    <button class="btn" id="dr-btn" onclick="doDraft()">📝 Гэрээний төсөл бэлдэх</button>
+    <div class="card hidden" id="dr-load"><div class="spin-box"><div class="spinner"></div><p>Гэрээний төсөл боловсруулж байна...</p><small>Монголын хуулийн стандартад нийцүүлж байна</small></div></div>
+    <div class="result-card hidden" id="dr-res">
+      <div class="ct">📝 Гэрээний төсөл</div>
+      <div class="md-out" id="dr-out"></div>
+      <div class="linfo">⚠️ Эцсийн гэрээг хуульч мэргэжилтнээр нягтлуулахыг зөвлөж байна.</div>
+      <button class="btn-o" onclick="dlDoc('dr-out','гэрээний_төсөл')">⬇️ Word татах</button>
+      <button class="btn-o" onclick="dlTxt('dr-out','гэрээний_төсөл')">⬇️ .txt татах</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 2: CONVERT ═══════════ -->
+<div class="sec hidden" id="sec-convert">
+  <div class="card">
+    <div class="ct">🔄 Файл → Текст / Word хөрвүүлэгч</div>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:14px">PDF, PNG, JPG, JPEG зэрэг файлаас текст гарган авч Word формаар татна. Зурган файлд Tesseract OCR эсвэл Claude Vision ашиглана.</p>
+    <div class="dz" id="cv-z"><div class="dz-icon">📁</div>
+      <p><strong>Дарж сонгох</strong> эсвэл чирэх</p>
+      <p style="margin-top:4px;font-size:12px;color:#9ca3af">.pdf · .png · .jpg · .jpeg · .docx · .txt</p>
+      <input type="file" id="cv-f" accept=".pdf,.png,.jpg,.jpeg,.docx,.doc,.txt" style="display:none"/></div>
+    <div class="fb hidden" id="cv-b">📄 <span id="cv-fn"></span></div>
+    <div class="prog-wrap hidden" id="cv-pg"><div class="prog-bar"><div class="prog-fill" id="cv-pf" style="width:0%"></div></div>
+      <div class="prog-lbl" id="cv-pl"></div></div>
+  </div>
+  <div class="card hidden" id="cv-opts">
+    <div class="ct">⚙️ Тохиргоо</div>
+    <div class="frow">
+      <div><label class="lbl">OCR хэл</label>
+        <select id="cv-ol"><option value="claude">Claude AI Vision (хамгийн нарийн)</option>
+          <option value="mn+eng">Tesseract: Монгол + Англи</option>
+          <option value="eng">Tesseract: English only</option></select></div>
+      <div><label class="lbl">Гаралтын формат</label>
+        <select id="cv-of"><option value="word">Word (.doc)</option>
+          <option value="txt">Текст (.txt)</option></select></div>
+    </div>
+    <button class="btn" id="cv-btn" onclick="doConvert()">🔄 Хөрвүүлэх</button>
+  </div>
+  <div class="card hidden" id="cv-load"><div class="spin-box"><div class="spinner"></div>
+    <p id="cv-st">Файл боловсруулж байна...</p><small>OCR / Claude Vision ашиглаж байна</small></div></div>
+  <div class="result-card hidden" id="cv-res">
+    <div class="ct">✅ Гарган авсан текст</div>
+    <div class="extract-box" id="cv-out"></div>
+    <button class="btn-o" onclick="dlDocRaw('cv-out','хөрвүүлсэн')">⬇️ Word татах</button>
+    <button class="btn-o" onclick="dlTxtRaw('cv-out','хөрвүүлсэн')">⬇️ .txt татах</button>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 3: COURT ═══════════ -->
+<div class="sec hidden" id="sec-court">
+  <div class="stabs">
+    <button class="stab active" onclick="goPane('k','brief',this)">📋 Хэргийн товьёог</button>
+    <button class="stab" onclick="goPane('k','hearing',this)">🏛️ Хуралдааны бэлтгэл</button>
+    <button class="stab" onclick="goPane('k','similar',this)">🔎 Ижил шийдвэр</button>
+    <button class="stab" onclick="goPane('k','registry',this)">📁 Хэргийн бүртгэл</button>
+  </div>
+
+  <!-- BRIEF -->
+  <div class="pane active" id="k-brief">
+    <div class="card">
+      <div class="ct">🏛️ Хэргийн үндсэн мэдээлэл</div>
+      <div class="frow">
+        <div><label class="lbl">Шүүх</label>
+          <input class="inp" id="kb-court" placeholder="Жишээ: БЗД-ийн Иргэний хэргийн тойргийн шүүх"/></div>
+        <div><label class="lbl">Хэргийн дугаар</label>
+          <input class="inp" id="kb-no" placeholder="182/ШШ2024/01234"/></div>
+      </div>
+      <div class="frow">
+        <div><label class="lbl">Нэхэмжлэгч</label>
+          <input class="inp" id="kb-pl" placeholder="Иргэн/байгууллагын нэр, өмгөөлөгч..."/></div>
+        <div><label class="lbl">Хариуцагч</label>
+          <input class="inp" id="kb-df" placeholder="Иргэн/байгууллагын нэр..."/></div>
+      </div>
+      <label class="lbl">Нэхэмжлэлийн шаардлага</label>
+      <textarea class="short" id="kb-cl" placeholder="Юу нэхэмжилж байгааг товч бичнэ үү..."></textarea>
+    </div>
+    <div class="card">
+      <div class="ct">📄 Хэргийн материал</div>
+      <div class="dz" id="kb-z"><div class="dz-icon">📂</div>
+        <p><strong>Хэргийн баримт бичгийн файл</strong> (.docx · .pdf · .txt)</p>
+        <input type="file" id="kb-f" accept=".docx,.doc,.txt,.pdf" style="display:none"/></div>
+      <div class="fb hidden" id="kb-b">📄 <span id="kb-fn"></span></div>
+      <div class="or">эсвэл текст paste хийх</div>
+      <textarea class="tall" id="kb-docs" placeholder="Хэргийн баримт бичиг, он цагийн дараалал, нотлох баримт, шүүхийн шийдвэр зэргийг оруулна уу..."></textarea>
+      <div style="margin-top:11px"><label class="lbl">AI загвар</label>
+        <select id="kb-m" style="width:210px">
+          <option value="claude-opus-4-8">Opus (хамгийн сайн)</option>
+          <option value="claude-sonnet-4-6" selected>Sonnet (нарийн)</option>
+          <option value="claude-haiku-4-5-20251001">Haiku (хурдан)</option></select></div>
+    </div>
+    <div class="card" style="margin-top:0">
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none">
+        <input type="checkbox" id="kb-cont" onchange="toggleContinue('kb')">
+        <span style="font-size:0.9em;color:#c8d0e0">🔄 Өмнөх ажлыг үргэлжлүүлэх</span>
+      </label>
+      <div class="hidden" id="kb-cont-area" style="margin-top:10px">
+        <p style="font-size:0.8em;color:#8090a8;margin:0 0 6px">Өмнө гаргасан жагсаалтаа paste хийнэ үү — AI шинэ материалаар нэмж сайжруулна. Эхнээс дахин уншуулах шаардлагагүй.</p>
+        <textarea class="tall" id="kb-prev" style="min-height:120px" placeholder="Өмнөх жагсаалтаа энд paste хийнэ үү..."></textarea>
+      </div>
+    </div>
+    <button class="btn" id="kb-btn" onclick="doBrief()">📋 Баримтын жагсаалт гаргах</button>
+    <div class="card hidden" id="kb-load"><div class="spin-box"><div class="spinner"></div><p>Хэргийн товьёог боловсруулж байна...</p><small>legalinfo.mn хуулиудад нийцүүлж байна</small></div></div>
+    <div class="result-card hidden" id="kb-res">
+      <div class="ct">📋 Хэргийн дэлгэрэнгүй товьёог</div>
+      <div class="md-out" id="kb-out"></div>
+      <div class="linfo">💡 Хуулийн заалтыг <strong>legalinfo.mn</strong>-ээс, шийдвэрийн дугаарыг <strong>shuukh.mn</strong>-ээс нягтлаарай.</div>
+      <button class="btn-o" onclick="dlDoc('kb-out','хэргийн_товьёог')">⬇️ Word татах</button>
+      <button class="btn-o" onclick="dlTxt('kb-out','хэргийн_товьёог')">⬇️ .txt татах</button>
+    </div>
+  </div>
+
+  <!-- HEARING -->
+  <div class="pane hidden" id="k-hearing">
+    <div class="card">
+      <div class="ct">🏛️ Шүүх хуралдааны мэдээлэл</div>
+      <div class="frow">
+        <div><label class="lbl">Хуралдааны огноо</label>
+          <input class="inp" type="date" id="kh-dt"/></div>
+        <div><label class="lbl">Шүүгч</label>
+          <input class="inp" id="kh-jd" placeholder="Шүүгчийн нэр..."/></div>
+      </div>
+      <label class="lbl">Таны байр суурь / хамгаалах чиглэл</label>
+      <textarea class="short" id="kh-pos" placeholder="Жишээ: Нэхэмжлэлийг бүрэн хангуулах. Гол баримт: 2016.01.15-ны №1/443 бичиг, 2019 оны хөрөнгө хүлээлцэх акт. Хариуцагчаас 3,054 м² дотор 168.64 м² багтаж байсан эсэхийг нотлуулах..."></textarea>
+    </div>
+    <div class="card">
+      <div class="ct">📄 Хэргийн материал</div>
+      <div class="dz" id="kh-z"><div class="dz-icon">📂</div>
+        <p><strong>Хэргийн бүх материал</strong> — товьёог, нотлох баримт, шийдвэр (.docx · .pdf · .txt)</p>
+        <input type="file" id="kh-f" accept=".docx,.doc,.txt,.pdf" style="display:none"/></div>
+      <div class="fb hidden" id="kh-b">📄 <span id="kh-fn"></span></div>
+      <div class="or">эсвэл текст paste хийх</div>
+      <textarea class="tall" id="kh-docs" placeholder="Хэргийн товьёог, нотлох баримтын жагсаалт, давж заалдах магадлал, шүүхийн шийдвэрүүд зэрэг бүх материалыг энд оруулна уу...&#10;&#10;💡 Файл оруулсны дараа текст автоматаар дүүрнэ."></textarea>
+      <div style="margin-top:11px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div><label class="lbl">AI загвар</label>
+          <select id="kh-m" style="width:210px">
+            <option value="claude-opus-4-8">Opus (хамгийн сайн)</option>
+            <option value="claude-sonnet-4-6" selected>Sonnet (нарийн)</option>
+            <option value="claude-haiku-4-5-20251001">Haiku (хурдан)</option></select></div>
+        <div style="margin-top:14px">
+          <button class="btn-o" onclick="autoFillHearing()" id="kh-auto">🔍 Мэдээлэл автоматаар бөглөх</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:0">
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none">
+        <input type="checkbox" id="kh-cont" onchange="toggleContinue('kh')">
+        <span style="font-size:0.9em;color:#c8d0e0">🔄 Өмнөх бэлтгэлийг үргэлжлүүлэх</span>
+      </label>
+      <div class="hidden" id="kh-cont-area" style="margin-top:10px">
+        <p style="font-size:0.8em;color:#8090a8;margin:0 0 6px">Өмнө бэлдсэн бэлтгэлийн материалаа paste хийнэ үү — AI шинэ материалаар нэмж, сайжруулж боловсруулна. Бүх хэргийг эхнээс уншуулах шаардлагагүй.</p>
+        <textarea class="tall" id="kh-prev" style="min-height:120px" placeholder="Өмнөх бэлтгэлийн материалаа энд paste хийнэ үү..."></textarea>
+      </div>
+    </div>
+    <button class="btn" id="kh-btn" onclick="doHearing()">🏛️ Өмгөөллийн дотоод бэлтгэл хийх</button>
+    <div class="card hidden" id="kh-load"><div class="spin-box"><div class="spinner"></div><p>Шүүх хуралдааны бэлтгэлийн материал боловсруулж байна...</p><small>Хуулийн заалт, стратеги, асуулт тодруулж байна</small></div></div>
+    <div class="result-card hidden" id="kh-res">
+      <div class="ct">🏛️ ӨМГӨӨЛЛИЙН ДОТООД БЭЛТГЭЛ</div>
+      <div class="md-out" id="kh-out"></div>
+      <div class="linfo">💡 Хуулийн заалтыг <strong>legalinfo.mn</strong>-ээс нягтлаарай.</div>
+      <button class="btn-o" onclick="dlDoc('kh-out','шүүх_бэлтгэл')">⬇️ Word татах</button>
+      <button class="btn-o" onclick="dlTxt('kh-out','шүүх_бэлтгэл')">⬇️ .txt татах</button>
+    </div>
+  </div>
+
+  <!-- SIMILAR -->
+  <div class="pane hidden" id="k-similar">
+    <div class="card">
+      <div class="ct">🔎 Ижил төстэй шүүхийн шийдвэр хайх</div>
+      <div class="frow">
+        <div><label class="lbl">Хэргийн ангилал</label>
+          <select id="sm-t"><option>Иргэний хэрэг — үл хөдлөх хөрөнгө</option>
+            <option>Иргэний хэрэг — гэрээний маргаан</option>
+            <option>Иргэний хэрэг — өмчийн маргаан</option>
+            <option>Хөдөлмөрийн маргаан</option>
+            <option>Гэр бүлийн маргаан</option>
+            <option>Арилжааны маргаан</option>
+            <option>Захиргааны маргаан</option>
+            <option>Эрүүгийн хэрэг</option></select></div>
+        <div><label class="lbl">AI загвар</label>
+          <select id="sm-m">
+            <option value="claude-opus-4-8">Opus — хамгийн сайн</option>
+            <option value="claude-sonnet-4-6" selected>Sonnet — нарийн (зөвлөмж)</option>
+            <option value="claude-haiku-4-5-20251001">Haiku — хурдан</option></select></div>
+      </div>
+      <label class="lbl">Хэргийн тодорхойлолт</label>
+      <textarea id="sm-d" placeholder="Хэргийн гол цөм, маргааны объект, хэн нэхэмжилсэн, юуг маргасан, ямар хуулийн заалт хамаарна гэж үзэж байгааг тодорхой бичнэ үү..."></textarea>
+    </div>
+    <button class="btn" id="sm-btn" onclick="doSimilar()">🔎 Ижил шийдвэр хайх</button>
+    <div class="card hidden" id="sm-load"><div class="spin-box"><div class="spinner"></div><p>Ижил төстэй шийдвэр хайж байна...</p></div></div>
+    <div class="result-card hidden" id="sm-res">
+      <div class="ct">🔎 Ижил төстэй шийдвэрүүд</div>
+      <div class="md-out" id="sm-out"></div>
+      <div class="linfo">💡 Шийдвэрүүдийг <strong>shuukh.mn</strong> болон <strong>legalinfo.mn</strong>-ээс нягтлаарай.</div>
+      <button class="btn-o" onclick="dlTxt('sm-out','ижил_шийдвэр')">⬇️ .txt татах</button>
+    </div>
+  </div><!-- /k-similar -->
+
+  <!-- REGISTRY -->
+  <div class="pane hidden" id="k-registry">
+    <div class="card">
+      <div class="ct">📁 Хэргийн бүртгэл — Миний хэргүүд</div>
+      <div class="frow3" style="margin-bottom:10px">
+        <div><input class="inp" id="reg-no" placeholder="Хэргийн дугаар"/></div>
+        <div><input class="inp" id="reg-name" placeholder="Талуудын нэр (нэхэмжлэгч vs хариуцагч)"/></div>
+        <div><select id="reg-status" class="inp">
+          <option value="active">🔵 Идэвхтэй</option>
+          <option value="hearing">🟡 Хуралдааны хүлээлт</option>
+          <option value="appeal">🟠 Давж заалдалт</option>
+          <option value="done">🟢 Дуусгавар</option>
+        </select></div>
+      </div>
+      <div class="frow">
+        <div><input class="inp" id="reg-court" placeholder="Шүүх"/></div>
+        <div><input class="inp" type="date" id="reg-next" title="Дараагийн хуралдааны огноо"/></div>
+      </div>
+      <textarea class="short" id="reg-note" placeholder="Тэмдэглэл (хэргийн товч агуулга, сүүлийн шийдвэр, дараагийн алхам...)"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn" onclick="regAdd()" style="max-width:180px">➕ Бүртгэх</button>
+        <button class="btn-o" onclick="regExport()">⬇️ CSV татах</button>
+        <button class="btn-o" onclick="regExportJSON()">📤 JSON backup</button>
+        <label class="btn-o" style="cursor:pointer" title="JSON backup файл оруулж сэргээх">📥 Сэргээх<input type="file" accept=".json" id="reg-import-f" style="display:none" onchange="regImportJSON(this)"></label>
+      </div>
+      <div style="margin-top:10px;padding:10px 12px;background:#0f172a;border-radius:8px;border:1px solid #334155">
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:8px">☁️ <strong style="color:#e2e8f0">Google Drive синк</strong> — бүх төхөөрөмжид нийлүүлэх</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-o" onclick="driveSaveReg()" id="drv-save-btn">☁️ Drive-д хадгалах</button>
+          <button class="btn-o" onclick="driveLoadReg()" id="drv-load-btn">☁️ Drive-ээс татах</button>
+          <span id="drv-status" style="font-size:11px;color:#64748b;align-self:center"></span>
+        </div>
+        <div style="font-size:10px;color:#475569;margin-top:6px">💡 Харилцаа цэсээс Google акаунтаа нэвтрүүлсний дараа ажиллана. Drive API-г Google Cloud Console-д идэвхжүүлсэн байх шаардлагатай.</div>
+      </div>
+    </div>
+    <div id="reg-list"></div>
+  </div><!-- /k-registry -->
+
+</div><!-- /sec-court -->
+
+<!-- ═══════════ SECTION 4: TRANSLATE ═══════════ -->
+<div class="sec hidden" id="sec-translate">
+  <div class="card">
+    <div class="ct">🌐 Баримт бичиг орчуулга</div>
+    <div class="frow3">
+      <div><label class="lbl">Эх хэл</label>
+        <select id="tr-from">
+          <option value="mn">🇲🇳 Монгол</option>
+          <option value="en">🇺🇸 Англи</option>
+          <option value="zh">🇨🇳 Хятад</option>
+          <option value="ru">🇷🇺 Орос</option>
+          <option value="ja">🇯🇵 Япон</option>
+          <option value="ko">🇰🇷 Солонгос</option>
+          <option value="de">🇩🇪 Герман</option>
+          <option value="fr">🇫🇷 Франц</option>
+        </select></div>
+      <div><label class="lbl">Зорилтот хэл</label>
+        <select id="tr-to">
+          <option value="en">🇺🇸 Англи</option>
+          <option value="mn">🇲🇳 Монгол</option>
+          <option value="zh">🇨🇳 Хятад</option>
+          <option value="ru">🇷🇺 Орос</option>
+          <option value="ja">🇯🇵 Япон</option>
+          <option value="ko">🇰🇷 Солонгос</option>
+          <option value="de">🇩🇪 Герман</option>
+          <option value="fr">🇫🇷 Франц</option>
+        </select></div>
+      <div><label class="lbl">Орчуулгын хэв маяг</label>
+        <select id="tr-style">
+          <option value="legal">⚖️ Хуулийн нэр томьёотой</option>
+          <option value="formal">🏢 Албан ёсны</option>
+          <option value="plain">💬 Энгийн ойлгомжтой</option>
+          <option value="contract">📄 Гэрээний хэлбэрт</option>
+        </select></div>
+    </div>
+    <div class="frow">
+      <div><label class="lbl">AI загвар</label>
+        <select id="tr-m">
+          <option value="claude-opus-4-8">Opus — хамгийн нарийн</option>
+          <option value="claude-sonnet-4-6" selected>Sonnet — нарийн (зөвлөмж)</option>
+          <option value="claude-haiku-4-5-20251001">Haiku — хурдан</option>
+        </select></div>
+      <div><label class="lbl">Хавсралт файл (нэмэлт)</label>
+        <div class="dz" id="tr-z" style="padding:10px"><div class="dz-icon" style="font-size:18px">📂</div>
+          <p style="font-size:12px"><strong>Файл</strong> (.docx · .pdf · .txt)</p>
+          <input type="file" id="tr-f" accept=".docx,.doc,.txt,.pdf" style="display:none"/>
+        </div>
+        <div class="fb hidden" id="tr-b">📄 <span id="tr-fn"></span></div>
+      </div>
+    </div>
+    <label class="lbl">Орчуулах текст</label>
+    <textarea class="tall" id="tr-t" placeholder="Орчуулах текст энд бичнэ үү...&#10;&#10;💡 Файл оруулсан тохиолдолд текст автоматаар дүүрнэ."></textarea>
+  </div>
+  <button class="btn" id="tr-btn" onclick="doTranslate()">🌐 Орчуулах</button>
+  <div class="card hidden" id="tr-load"><div class="spin-box"><div class="spinner"></div><p>Орчуулж байна...</p><small>Хуулийн нэр томьёог нарийн орчуулж байна</small></div></div>
+  <div class="result-card hidden" id="tr-res">
+    <div class="ct">✅ Орчуулгын үр дүн</div>
+    <div class="md-out" id="tr-out"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-o" onclick="dlDoc('tr-out','орчуулга')">⬇️ Word татах</button>
+      <button class="btn-o" onclick="dlTxt('tr-out','орчуулга')">⬇️ .txt татах</button>
+      <button class="btn-o" onclick="doCrossCheck()">🔍 Нэр томьёо шалгах</button>
+    </div>
+    <div class="result-card hidden" id="tr-check" style="margin-top:10px;background:#fffbeb;border:1px solid #fde68a">
+      <div class="ct">🔍 Нэр томьёоны нягтлалт</div>
+      <div class="md-out" id="tr-check-out"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 5: COMM (Calendar + Gmail) ═══════════ -->
+<div class="sec hidden" id="sec-comm">
+  <div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:15px;box-shadow:0 1px 5px rgba(0,0,0,.07)">
+    <div id="comm-signin">
+      <p style="text-align:center;color:#6b7280;margin:10px 0 14px;font-size:13px">Google account-тайгаа нэг удаа нэвтэрч Календар болон Gmail-ийг ашиглана уу</p>
+      <div style="text-align:center">
+        <button class="g-btn" onclick="gSignIn()">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Google-оор нэвтрэх
+        </button>
+      </div>
+    </div>
+    <div id="comm-user-bar" class="hidden" style="display:none;align-items:center;justify-content:space-between;padding:4px 8px">
+      <div id="comm-user" style="font-size:12px;color:#6b7280"></div>
+    </div>
+  </div>
+  <div class="stabs">
+    <button class="stab active" onclick="goCommPane('cal',this)">📅 Календар</button>
+    <button class="stab" onclick="goCommPane('gmail',this)">📧 Gmail</button>
+  </div>
+  <!-- CALENDAR PANE -->
+  <div id="comm-cal" class="pane active">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="ct" style="margin:0">📅 7 хоногийн хуваарь</div>
+        <button class="refresh-btn" onclick="loadCalendar()">🔄 Шинэчлэх</button>
+      </div>
+      <div class="tz-note" id="cal-tz"></div>
+      <div id="cal-list"><div style="text-align:center;color:#9ca3af;padding:30px;font-size:13px">Google-оор нэвтэрсний дараа харагдана</div></div>
+    </div>
+  </div>
+  <!-- GMAIL PANE -->
+  <div id="comm-gmail" class="pane hidden">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="ct" style="margin:0">📧 Хариу шаардах мейлүүд</div>
+        <button class="refresh-btn" onclick="loadGmail()">🔄 Шинэчлэх</button>
+      </div>
+      <div id="gmail-status" style="font-size:13px;color:#6b7280;margin-bottom:10px"></div>
+      <div id="gmail-list"><div style="text-align:center;color:#9ca3af;padding:30px;font-size:13px">Google-оор нэвтэрсний дараа харагдана</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 6: NEWS ═══════════ -->
+<div class="sec hidden" id="sec-growth">
+  <div class="card">
+    <div class="ct">📰 Өдрийн мэдээ — Хууль, улс төр, эдийн засаг</div>
+    <div class="frow3">
+      <div><label class="lbl">Мэдээний ангилал</label>
+        <select id="nw-cat">
+          <option value="all">🌐 Бүгд (улс төр + хууль + эдийн засаг)</option>
+          <option value="law">⚖️ Хуулийн мэдээ</option>
+          <option value="politics">🏛️ Улс төрийн мэдээ</option>
+          <option value="economy">💹 Эдийн засгийн мэдээ</option>
+          <option value="aviation">✈️ Нисэхийн салбарын мэдээ</option>
+          <option value="international">🌍 Олон улсын мэдээ</option>
+        </select></div>
+      <div><label class="lbl">Хамрах хүрээ</label>
+        <select id="nw-scope">
+          <option value="both">🇲🇳 Монгол + 🌍 Дэлхий</option>
+          <option value="mn">🇲🇳 Монгол улс</option>
+          <option value="world">🌍 Дэлхий</option>
+        </select></div>
+      <div><label class="lbl">AI загвар</label>
+        <select id="nw-m">
+          <option value="claude-opus-4-8">Opus — хамгийн нарийн</option>
+          <option value="claude-sonnet-4-6" selected>Sonnet (зөвлөмж)</option>
+          <option value="claude-haiku-4-5-20251001">Haiku — хурдан</option>
+        </select></div>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 14px;font-size:12px;color:#166534;margin-top:4px">
+      📡 Google News RSS-ээс <strong>жинхэнэ өнөөдрийн мэдээ</strong> татаж, Claude-д дамжуулан Монгол хэлд боловсруулна.
+    </div>
+  </div>
+  <button class="btn" id="nw-btn" onclick="doNews()">📰 Мэдээ авах</button>
+  <div class="card hidden" id="nw-load">
+    <div class="spin-box"><div class="spinner"></div>
+      <p id="nw-st">Өдрийн мэдээ цуглуулж байна...</p>
+      <small>Монгол болон дэлхийн чухал үйл явдлыг тоймлож байна</small>
+    </div>
+  </div>
+  <div class="result-card hidden" id="nw-res">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="ct" style="margin:0">📰 Өдрийн мэдээний тойм</div>
+      <div style="font-size:11px;color:#9ca3af" id="nw-date"></div>
+    </div>
+    <div class="md-out" id="nw-out"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-o" onclick="dlDoc('nw-out','мэдээний_тойм')">⬇️ Word татах</button>
+      <button class="btn-o" onclick="dlTxt('nw-out','мэдээний_тойм')">⬇️ .txt татах</button>
+      <button class="btn-o" onclick="doNews()">🔄 Дахин авах</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ── marked.js тохиргоо ───────────────────────────
+if (typeof marked !== 'undefined') {
+  marked.setOptions({ breaks: true, gfm: true });
+}
+
+function renderMD(id, text) {
+  const el = document.getElementById(id);
+  if (typeof marked !== 'undefined') {
+    el.innerHTML = marked.parse(text);
+  } else {
+    el.textContent = text;
+  }
+}
+
+// ── PDF.js worker ────────────────────────────────
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+}
+
+// ── NAV ──────────────────────────────────────────
+function goSec(name, btn) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function goCommPane(name, btn) {
+  btn.parentElement.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('comm-cal').classList.add('hidden');
+  document.getElementById('comm-cal').classList.remove('active');
+  document.getElementById('comm-gmail').classList.add('hidden');
+  document.getElementById('comm-gmail').classList.remove('active');
+  const target = document.getElementById('comm-' + name);
+  if (target) { target.classList.remove('hidden'); target.classList.add('active'); }
+}
+
+function goPane(prefix, name, btn) {
+  const parent = btn.closest('.sec') || btn.closest('[id^="sec-"]');
+  btn.parentElement.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const panes = document.querySelectorAll('[id^="'+prefix+'-"]');
+  panes.forEach(p => { if(p.classList.contains('pane')){ p.classList.remove('active'); p.classList.add('hidden'); }});
+  const t = document.getElementById(prefix+'-'+name);
+  if(t){ t.classList.remove('hidden'); t.classList.add('active'); }
+}
+
+// ── API KEY ──────────────────────────────────────
+window.onload = () => {
+  const k = localStorage.getItem('legal_v2_key');
+  if (k) { document.getElementById('apiKey').value = k; dot(true); }
+  dz('rv-z','rv-f','rv-b','rv-fn','rv-t');
+  dz('sg-z','sg-f','sg-b','sg-fn','sg-t');
+  dz('cv-z','cv-f','cv-b','cv-fn',null,onCvFile);
+  dz('kb-z','kb-f','kb-b','kb-fn','kb-docs',null,true);
+  dz('kh-z','kh-f','kh-b','kh-fn','kh-docs',null,true);
+  dz('tr-z','tr-f','tr-b','tr-fn','tr-t');
+  regRender();
+  // PWA service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+};
+
+function onKey() {
+  const v = document.getElementById('apiKey').value.trim();
+  if (v.startsWith('sk-ant-') && v.length > 20) {
+    localStorage.setItem('legal_v2_key', v); dot(true);
+  } else dot(false);
+}
+
+function dot(ok) { document.getElementById('kd').className = 'key-dot'+(ok?' ok':''); }
+
+// ══════════════════════════════════
+// GOOGLE OAUTH — Calendar + Gmail
+// ══════════════════════════════════
+const G_CLIENT_ID = '1086726792035-evo9tu4aligpkj4ns6gfpcs3teuq034j.apps.googleusercontent.com';
+const G_SCOPES = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file';
+let gToken = null;
+let gTokenClient = null;
+
+function initGoogleClient() {
+  if (typeof google === 'undefined') {
+    setTimeout(initGoogleClient, 500); return;
+  }
+  gTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: G_CLIENT_ID,
+    scope: G_SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { alert('Google нэвтрэлт алдаа: ' + resp.error); return; }
+      gToken = resp.access_token;
+      // Хэрэглэгчийн мэдээлэл авах
+      try {
+        const ui = await gFetch('https://www.googleapis.com/oauth2/v2/userinfo');
+        const name = ui.name || ui.email || '';
+        const ub = document.getElementById('comm-user');
+        if (ub) { ub.textContent = '✅ ' + name; }
+      } catch(e) {}
+      const signinEl = document.getElementById('comm-signin');
+      const userBar = document.getElementById('comm-user-bar');
+      if (signinEl) signinEl.classList.add('hidden');
+      if (userBar) { userBar.classList.remove('hidden'); userBar.style.display='flex'; }
+      loadCalendar();
+      loadGmail();
+    }
+  });
+}
+initGoogleClient();
+
+function gSignIn() {
+  if (!gTokenClient) { alert('Google нэвтрэлт ачаалагдаагүй байна. Хуудсыг дахин ачааллана уу.'); return; }
+  if (gToken) { loadCalendar(); loadGmail(); return; }
+  gTokenClient.requestAccessToken({ prompt: 'consent' });
+}
+
+async function gFetch(url, opts={}) {
+  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + gToken, ...opts.headers }, ...opts });
+  if (!r.ok) { const e = await r.json().catch(()=>{}); throw new Error(e?.error?.message || 'Google API алдаа ' + r.status); }
+  return r.json();
+}
+
+// ── CALENDAR ─────────────────────────────────────
+async function loadCalendar() {
+  if (!gToken) return;
+  const list = document.getElementById('cal-list');
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280">⏳ Ачааллаж байна...</div>';
+
+  const localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const mongolTZ = 'Asia/Ulaanbaatar';
+  const tzSame = localTZ === mongolTZ;
+  document.getElementById('cal-tz').textContent = tzSame
+    ? '🕐 Монголын цагаар харуулж байна'
+    : `🕐 Монголын цаг (UTC+8) → Таны цаг (${localTZ})`;
+
+  const now = new Date();
+  const end = new Date(now); end.setDate(end.getDate() + 7);
+
+  try {
+    const data = await gFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?' +
+      new URLSearchParams({ timeMin: now.toISOString(), timeMax: end.toISOString(), singleEvents: true, orderBy: 'startTime', maxResults: 30 }));
+
+    const events = data.items || [];
+    if (!events.length) { list.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px">Ирэх 7 хоногт үйл явдал байхгүй байна</p>'; return; }
+
+    let html = '';
+    let lastDay = '';
+    events.forEach(ev => {
+      const start = ev.start?.dateTime ? new Date(ev.start.dateTime) : new Date(ev.start.date + 'T00:00:00');
+      const isAllDay = !ev.start?.dateTime;
+      const isToday = start.toDateString() === now.toDateString();
+
+      const dayKey = start.toLocaleDateString('mn-MN', { weekday:'long', month:'long', day:'numeric' });
+      if (dayKey !== lastDay) {
+        html += `<div class="day-hdr">${isToday ? '📍 Өнөөдөр — ' : ''}${dayKey}</div>`;
+        lastDay = dayKey;
+      }
+
+      // Монголын цаг
+      const mnTime = isAllDay ? 'Бүхэл өдөр' : start.toLocaleTimeString('mn-MN', { hour:'2-digit', minute:'2-digit', timeZone: mongolTZ });
+      // Орон нутгийн цаг
+      const localTime = isAllDay ? '' : start.toLocaleTimeString('mn-MN', { hour:'2-digit', minute:'2-digit', timeZone: localTZ });
+
+      html += `<div class="ev-card ${isToday?'today':''}">
+        <div class="ev-title">${ev.summary || '(Нэргүй)'}</div>
+        <div class="ev-time">
+          <span>🇲🇳 ${mnTime}</span>
+          ${(!isAllDay && !tzSame) ? `<span>📍 ${localTime} (таны цаг)</span>` : ''}
+        </div>
+        ${ev.location ? `<div class="ev-loc">📍 ${ev.location}</div>` : ''}
+      </div>`;
+    });
+    list.innerHTML = html;
+  } catch(e) {
+    list.innerHTML = `<p style="color:#ef4444;padding:20px">Алдаа: ${e.message}</p>`;
+  }
+}
+
+// ── GMAIL ─────────────────────────────────────────
+async function loadGmail() {
+  if (!gToken) return;
+  const glist = document.getElementById('gmail-list');
+  const gstat = document.getElementById('gmail-status');
+  glist.innerHTML = '';
+  gstat.textContent = '⏳ Мейл татаж байна...';
+
+  try {
+    const data = await gFetch('https://www.googleapis.com/gmail/v1/users/me/messages?labelIds=INBOX&maxResults=20&q=is:unread');
+    const msgs = data.messages || [];
+    if (!msgs.length) { gstat.textContent = '✅ Уншаагүй мейл байхгүй байна'; return; }
+
+    gstat.textContent = `📬 ${msgs.length} уншаагүй мейл — Claude шинжилж байна...`;
+
+    // Мессежүүдийн дэлгэрэнгүй авах (эхний 10)
+    const details = await Promise.all(msgs.slice(0,10).map(m =>
+      gFetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From,Subject,Date`)
+    ));
+
+    // Claude-аар шинжлэх
+    const mailSummary = details.map((d,i) => {
+      const h = d.payload?.headers || [];
+      const from = h.find(x=>x.name==='From')?.value || '';
+      const subj = h.find(x=>x.name==='Subject')?.value || '';
+      const snippet = d.snippet || '';
+      return `${i+1}. Илгээсэн: ${from}\n   Гарчиг: ${subj}\n   Агуулга: ${snippet}`;
+    }).join('\n\n');
+
+    const key = getKey();
+    let analysis = null;
+    if (key) {
+      try {
+        const ar = await fetch('https://api.anthropic.com/v1/messages', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+          body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:1000, messages:[{role:'user',content:
+            `Дараах ${msgs.length <= 10 ? msgs.length : 10} мейлийг шинжлэн JSON массив буцаана уу. Зөвхөн JSON, тайлбаргүй:
+[{"idx":1,"priority":"urgent|reply|info","reason":"яагаад","needsReply":true|false}]
+priority: urgent=яаралтай хариу, reply=хариу шаардах, info=мэдээлэл л
+
+МЕЙЛҮҮД:
+${mailSummary}`}]})
+        });
+        const ad = await ar.json();
+        const jm = ad.content?.[0]?.text?.match(/\[[\s\S]*\]/);
+        if (jm) analysis = JSON.parse(jm[0]);
+      } catch(e) {}
+    }
+
+    gstat.textContent = `📬 ${msgs.length} уншаагүй мейл`;
+    let html = '';
+    details.forEach((d,i) => {
+      const h = d.payload?.headers || [];
+      const from = h.find(x=>x.name==='From')?.value || '';
+      const subj = h.find(x=>x.name==='Subject')?.value || '(Гарчиггүй)';
+      const date = h.find(x=>x.name==='Date')?.value || '';
+      const snippet = d.snippet || '';
+      const an = analysis?.find(a=>a.idx===i+1);
+      const pri = an?.priority || 'info';
+      const reason = an?.reason || '';
+      const needsReply = an?.needsReply;
+      const badge = pri==='urgent'?'🔴 Яаралтай':pri==='reply'?'🟡 Хариу шаардана':'⚪ Мэдээлэл';
+
+      html += `<div class="ml-card ${pri}" id="ml-${d.id}">
+        <span class="ml-badge ${pri}">${badge}</span>
+        <div class="ml-from">${from.replace(/<.*>/,'').trim() || from}</div>
+        <div class="ml-subj">${subj}</div>
+        <div class="ml-snippet">${snippet.slice(0,150)}...</div>
+        ${reason ? `<div style="font-size:11px;color:#6b7280;margin-bottom:6px">💡 ${reason}</div>` : ''}
+        <div class="ml-actions">
+          ${needsReply ? `<button onclick="draftReply('${d.id}','${subj.replace(/'/g,"\\'")}','${from.replace(/'/g,"\\'")}')">✍️ Хариу бичих</button>` : ''}
+          <button onclick="markRead('${d.id}')">✅ Уншсан болгох</button>
+        </div>
+        <div class="reply-box hidden" id="reply-${d.id}">
+          <div style="font-size:12px;font-weight:600;margin-bottom:6px">Хариу ноороо:</div>
+          <textarea id="rta-${d.id}" placeholder="Хариу бичигдэж байна..."></textarea>
+          <div style="display:flex;gap:8px">
+            <button onclick="sendReply('${d.id}')" style="background:#2563eb;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">📤 Илгээх</button>
+            <button onclick="document.getElementById('reply-${d.id}').classList.add('hidden')" style="background:#f3f4f6;border:1px solid #e5e7eb;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">Хаах</button>
+          </div>
+        </div>
+      </div>`;
+    });
+    glist.innerHTML = html;
+  } catch(e) {
+    gstat.textContent = '';
+    glist.innerHTML = `<p style="color:#ef4444;padding:20px">Алдаа: ${e.message}</p>`;
+  }
+}
+
+async function draftReply(msgId, subj, from) {
+  const box = document.getElementById('reply-'+msgId);
+  const ta = document.getElementById('rta-'+msgId);
+  box.classList.remove('hidden');
+  ta.value = '⏳ Claude хариу бичиж байна...';
+  ta.disabled = true;
+  try {
+    const key = getKey(); if (!key) throw new Error('API key байхгүй');
+    // Мессежийн бүрэн агуулга авах
+    const full = await gFetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${msgId}?format=full`);
+    let body = '';
+    const parts = full.payload?.parts || [full.payload];
+    for (const p of parts) {
+      if (p?.mimeType === 'text/plain' && p?.body?.data) {
+        body = atob(p.body.data.replace(/-/g,'+').replace(/_/g,'/')); break;
+      }
+    }
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1000, messages:[{role:'user',content:
+        `Та хуулийн мэргэжилтэн Отгондорж Лувсандагвагийн өмнөөс мейлд мэргэжлийн хариу бичнэ үү.
+Монгол хэлээр, товч, тодорхой, мэргэжлийн.
+
+Илгээгч: ${from}
+Гарчиг: ${subj}
+Агуулга: ${body.slice(0,1500)}
+
+Зөвхөн мейлийн хариуны текстийг бич (мэндчилгээнээс эхлэн).`}]})
+    });
+    const rd = await r.json();
+    ta.value = rd.content?.[0]?.text || '';
+  } catch(e) { ta.value = 'Алдаа: ' + e.message; }
+  ta.disabled = false;
+}
+
+async function sendReply(msgId) {
+  const ta = document.getElementById('rta-'+msgId);
+  const body = ta.value.trim();
+  if (!body) return;
+  if (!confirm('Мейл илгээх үү?')) return;
+  try {
+    const full = await gFetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${msgId}?format=metadata&metadataHeaders=From,Subject,Message-ID`);
+    const h = full.payload?.headers || [];
+    const to = h.find(x=>x.name==='From')?.value || '';
+    const subj = 'Re: ' + (h.find(x=>x.name==='Subject')?.value || '');
+    const msgId2 = h.find(x=>x.name==='Message-ID')?.value || '';
+    const raw = btoa(unescape(encodeURIComponent(
+      `To: ${to}\r\nSubject: ${subj}\r\nIn-Reply-To: ${msgId2}\r\nReferences: ${msgId2}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n${body}`
+    ))).replace(/\+/g,'-').replace(/\//g,'_');
+    await gFetch(`https://www.googleapis.com/gmail/v1/users/me/messages/send`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw, threadId: full.threadId })
+    });
+    alert('✅ Мейл амжилттай илгээгдлээ!');
+    document.getElementById('reply-'+msgId).classList.add('hidden');
+  } catch(e) { alert('Алдаа: ' + e.message); }
+}
+
+async function markRead(msgId) {
+  try {
+    await gFetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${msgId}/modify`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ removeLabelIds: ['UNREAD'] })
+    });
+    const card = document.getElementById('ml-'+msgId);
+    if (card) card.style.opacity = '0.4';
+  } catch(e) { alert('Алдаа: ' + e.message); }
+}
+
+
+function getKey() {
+  const k = document.getElementById('apiKey').value.trim();
+  if (!k || !k.startsWith('sk-ant-')) { alert('Дээрх талбарт Claude API key оруулна уу.'); return null; }
+  return k;
+}
+
+// ── DROP ZONES ───────────────────────────────────
+function dz(zid, fid, bid, fnid, taid, onFile, multiple) {
+  const z = document.getElementById(zid), fi = document.getElementById(fid);
+  if (!z||!fi) return;
+  if (multiple) fi.setAttribute('multiple','');
+  z.onclick = ()=>fi.click();
+  z.ondragover = e=>{ e.preventDefault(); z.classList.add('drag'); };
+  z.ondragleave = ()=>z.classList.remove('drag');
+  z.ondrop = e=>{ e.preventDefault(); z.classList.remove('drag'); handleFiles([...e.dataTransfer.files]); };
+  fi.onchange = e=>handleFiles([...e.target.files]);
+  async function handleFiles(files) {
+    if (!files||!files.length) return;
+    const names = files.map(f=>f.name).join(', ');
+    const totalKb = files.reduce((s,f)=>s+f.size,0)/1024;
+    if (bid) {
+      document.getElementById(fnid).textContent = names+' ('+totalKb.toFixed(0)+' KB)';
+      document.getElementById(bid).classList.remove('hidden');
+    }
+    if (onFile) { onFile(files); return; }
+    if (!taid) return;
+    const ta = document.getElementById(taid);
+    ta.value = '⏳ Файл уншиж байна...';
+    ta.disabled = true;
+    // Файл уншиж байх үед бүх холбоотой товчийг идэвхгүй болгоно
+    const relatedBtns = document.querySelectorAll(`[data-dz="${zid}"]`);
+    relatedBtns.forEach(b=>b.disabled=true);
+    // Textarea-тай холбогдох товч хайж хаана
+    const taEl = document.getElementById(taid);
+    const section = taEl ? taEl.closest('.pane, .card') : null;
+    const actionBtns = section ? section.querySelectorAll('button.btn, button.btn-o') : [];
+    actionBtns.forEach(b=>{ b._wasDisabled=b.disabled; b.disabled=true; });
+
+    let combined = '';
+    for (let i=0; i<files.length; i++) {
+      const f = files[i];
+      ta.value = `⏳ Файл ${i+1}/${files.length}: "${f.name}" уншиж байна...`;
+      const t = await readAnyDeep(f, (msg)=>{ ta.value = `⏳ [${i+1}/${files.length}] ${f.name}: ${msg}`; });
+      if (t && t.trim()) {
+        if (t.startsWith('[АЛДАА:')) {
+          combined += `\n\n=== ${f.name} — УНШИЖ ЧАДСАНГҮЙ ===\n${t}`;
+        } else {
+          combined += `\n\n=== ${f.name} ===\n${t.trim()}`;
+        }
+      }
+    }
+    ta.disabled = false;
+    // Товчнуудыг буцаана
+    actionBtns.forEach(b=>{ b.disabled=b._wasDisabled||false; delete b._wasDisabled; });
+    relatedBtns.forEach(b=>b.disabled=false);
+
+    const errMatches = combined.match(/\[АЛДАА:[^\]]+\]/g) || [];
+    const hasRealText = combined.replace(/=== .* — УНШИЖ ЧАДСАНГҮЙ ===[\s\S]*?\[АЛДАА:[^\]]+\]/g,'').trim().length > 20;
+    if (combined.trim()) {
+      ta.value = combined.trim();
+      if (errMatches.length > 0 && !hasRealText) {
+        const errDetail = errMatches.map(e=>e.replace('[АЛДАА:','').replace(']','')).join('\n');
+        alert('⚠️ Файл уншиж чадсангүй.\n\nАлдаа:\n' + errDetail + '\n\nШийдэл:\n• Хэрэв "Failed to fetch" бол GitHub Pages дээрх линкийг ашиглана уу (file:// биш)\n• Хэрэв "pdfjsLib" бол хуудсыг F5 дарж дахин ачааллана уу\n• Хэрэв "out of memory" бол файлын хэмжээ хэт том байна');
+      } else if (errMatches.length > 0) {
+        alert('Зарим файл амжилттай уншигдлаа. Уншигдаагүй файлуудын алдаа:\n' + errMatches.join('\n'));
+      }
+    } else {
+      ta.value = '';
+      alert('⚠️ Файлаас текст гарган авч чадсангүй.\n\nПDF зурагт хэлбэрт байвал Vision API ашигладаг.\nAPI key зөв оруулсан болон интернэт холболт шалгаарай.');
+    }
+  }
+}
+
+// PDF-ийн текст цөөн байвал автоматаар Vision-д шилждэг
+async function readAnyDeep(f, statusCb) {
+  if (!f) return '';
+  try {
+    if (f.name.match(/\.txt$/i)) return await f.text();
+    if (f.name.match(/\.docx?$/i)) {
+      statusCb && statusCb('Word задалж байна...');
+      const b = await f.arrayBuffer();
+      return (await mammoth.extractRawText({arrayBuffer:b})).value;
+    }
+    if (f.name.match(/\.pdf$/i)) {
+      if (typeof pdfjsLib === 'undefined') throw new Error('PDF уншигч (PDF.js) ачаалагдаагүй байна. Хуудсыг дахин ачааллана уу (F5).');
+      statusCb && statusCb('PDF текст уншиж байна...');
+      const text = await readPDF(f);
+      const buf = await f.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+      const avgChars = text.length / Math.max(pdf.numPages, 1);
+      // Текст бараг байхгүй үед л Vision ашиглах (< 5 тэмдэгт/хуудас)
+      if (avgChars < 5) {
+        statusCb && statusCb('Зурган PDF — Vision ашиглаж байна (хамгийн ихдээ 50 хуудас)...');
+        return await pdfVisionAll(f, statusCb, 50);
+      }
+      return text;
+    }
+    if (f.name.match(/\.(png|jpg|jpeg)$/i)) {
+      statusCb && statusCb('Зураг Vision-оор уншиж байна...');
+      return await imgVision(f);
+    }
+  } catch(e) {
+    statusCb && statusCb('Алдаа: '+e.message);
+    return `[АЛДАА: ${e.message}]`;
+  }
+  return '';
+}
+
+async function readAny(f) {
+  try {
+    if (f.name.match(/\.txt$/i)) return await f.text();
+    if (f.name.match(/\.docx?$/i)) { const b=await f.arrayBuffer(); return (await mammoth.extractRawText({arrayBuffer:b})).value; }
+    if (f.name.match(/\.pdf$/i)) return await readPDF(f);
+  } catch(e) { alert('Файл унших алдаа: '+e.message); }
+  return '';
+}
+
+async function readPDF(f) {
+  if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js ачаалагдаагүй. F5 дарж хуудсыг дахин ачааллана уу.');
+  const buf = await f.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  let out = '';
+  for (let i=1;i<=pdf.numPages;i++) {
+    const pg = await pdf.getPage(i);
+    const ct = await pg.getTextContent();
+    out += ct.items.map(s=>s.str).join(' ')+'\n';
+  }
+  return out.trim();
+}
+
+async function readImgB64(f) {
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(f); });
+}
+
+// ── CLAUDE API CALL ──────────────────────────────
+async function claude(model, prompt, imgB64, imgMime, maxTok) {
+  const key = getKey(); if (!key) throw new Error('API key байхгүй');
+  const content = [];
+  if (imgB64) content.push({type:'image',source:{type:'base64',media_type:imgMime,data:imgB64}});
+  content.push({type:'text',text:prompt});
+  const r = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model, max_tokens: maxTok||4096, messages:[{role:'user',content}]})
+  });
+  if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||'API алдаа '+r.status); }
+  return (await r.json()).content[0].text;
+}
+
+function loading(lid, rid, on) {
+  document.getElementById(lid).classList.toggle('hidden',!on);
+  if (!on) document.getElementById(rid).classList.remove('hidden');
+}
+
+// ══════════════════════════════════
+// CONTRACT REVIEW
+// ══════════════════════════════════
+async function doReview() {
+  const text = document.getElementById('rv-t').value.trim();
+  if (!text) { alert('Гэрээний текст оруулна уу'); return; }
+  const model = document.getElementById('rv-m').value;
+  const ct = document.getElementById('rv-ct').value;
+  const j  = document.getElementById('rv-j').value;
+  const jScope = j==='mn' ? 'Монголын хууль (legalinfo.mn)'
+    : j==='intl' ? 'Олон улсын стандарт: CISG, UNIDROIT Зарчмууд, ICC'
+    : 'Монголын хууль (legalinfo.mn) болон олон улсын стандарт (CISG, UNIDROIT)';
+
+  const prompt = `Та Монголын гэрээний хуулийн мэргэжилтэн юм.
+Доорх гэрээг НАРИЙВЧЛАН, ЗАЛАТ БҮР дээр дэлгэрэнгүй хяналтын тайлан бэлтгэнэ үү.${ct!=='auto'?` Гэрээний төрөл: ${ct}.`:''}
+Хуулийн хүрээ: ${jScope}
+
+ЧУХАЛ ЗААВРУУД:
+- Гэрээний ЗАЛАТ БҮРИЙГ (зүйл, хэсэг бүрийг) тус тусад нь судалж шинжилнэ үү. Ерөнхий дүгнэлтээр хязгаарлахгүй — конкрет заалт, дугаар, текст дурдана.
+- Хяналтад хамааруулах хуулиудыг гэрээний агуулгаас нь тодорхойлно уу. Хамааралгүй хуулийг дурдахгүй.
+- Тайланг зөв, байгалийн Монгол хэлээр бичнэ үү.
+- legalinfo.mn дэх хүчинтэй хуулийн яг нэр, зүйл, хэсгийг дурдана уу.
+- Засварын санал тус бүрт ЯАГААД засах ёстойг тодорхой тайлбарлана. Болзошгүй эрсдэлийг тооцоолно.
+
+---
+${text.slice(0,14000)}
+---
+
+Доорх бүтцээр ДЭЛГЭРЭНГҮЙ тайлан бичнэ үү:
+
+# ГЭРЭЭНИЙ ХЯНАЛТЫН ТАЙЛАН
+
+## Ерөнхий мэдээлэл
+| Зүйл | Утга |
+|------|------|
+| Гэрээний төрөл | |
+| Хэл | |
+| Нийт зүйлийн тоо | |
+| Хянасан огноо | ${new Date().toLocaleDateString('mn-MN')} |
+| Ерөнхий үнэлгээ (оноо /100) | |
+
+## Ерөнхий дүгнэлт
+(3–5 өгүүлбэрт хяналтын ерөнхий дүн — хамгийн их анхаарах асуудлуудыг тодотгоно)
+
+---
+
+## 📋 Залат бүрийн шинжилгээ
+(Гэрээний ЗАЛАТ БҮР, бүх зүйл, бүх хэсгийг дарааллаар задлана. Асуудалгүй заалтыг "✅ Зөв" гэж, засвар шаардлагатайг дэлгэрэнгүй тайлбарлана.)
+
+### Зүйл [№] — [Заалтын гарчиг]
+- **Одоогийн текст:** (заалтын агуулгыг товч дурдана)
+- **Үнэлгээ:** ✅ Зөв / 🟡 Засвар шаардлагатай / 🔴 Өндөр эрсдэлтэй
+- **Шинжилгээ:** (энэ заалт хуульд нийцэж байна уу, тал бүрийн эрх тэнцвэртэй эсэх, болзошгүй эрсдэл)
+- **Засварын санал:** (байгаа бол — яг ямар текст болгох, яагаад)
+- **Хуулийн үндэслэл:** (хамаарах хуулийн нэр, зүйл, хэсэг)
+
+(Бүх зүйлийг ийм хэлбэрээр дарааллан гаргана)
+
+---
+
+## 🔴 Өндөр эрсдэлтэй асуудлуудын хураангуй
+(Дээрх шинжилгээнээс хамгийн ноцтой асуудлуудыг нэгтгэн жагсаана — тэргүүн ээлжид засах ёстой)
+
+| Зүйл/Хэсэг | Асуудал | Болзошгүй хохирол | Засварын чиглэл |
+|------------|---------|------------------|----------------|
+
+## ❌ Дутуу стандарт заалтууд
+(Монголын хуулийн дагуу байх ёстой боловч гэрээнд тусгаагүй заалтууд)
+
+| Дутуу заалт | Яагаад байх ёстой | Хуулийн үндэслэл |
+|-------------|-------------------|-----------------|
+
+## ✅ Хүчтэй, сайн заалтууд
+(Зөв боловсруулсан, хуульд нийцсэн, тэлгэрүүлэх хэрэггүй заалтуудыг тэмдэглэнэ)
+
+## 📌 Нийт зөвлөмж ба цаашдын алхам
+(Чухлын дарааллаар — юуг эхлэж засах, юуг нэмэх, юуг арилгах)`;
+
+  setBtnDisabled('rv-btn',true);
+  loading('rv-load','rv-res',true);
+  document.getElementById('rv-res').classList.add('hidden');
+  try {
+    const r = await claude(model, prompt);
+    renderMD('rv-out', r);
+    loading('rv-load','rv-res',false);
+    document.getElementById('rv-res').scrollIntoView({behavior:'smooth'});
+  } catch(e) { alert('Алдаа: '+e.message); document.getElementById('rv-load').classList.add('hidden'); }
+  setBtnDisabled('rv-btn',false);
+}
+
+// ══════════════════════════════════
+// CONTRACT SUGGEST
+// ══════════════════════════════════
+async function doSuggest() {
+  const text = document.getElementById('sg-t').value.trim();
+  if (!text) { alert('Гэрээний текст оруулна уу'); return; }
+  const model = document.getElementById('sg-m').value;
+  const side  = document.getElementById('sg-s').value;
+  const dir   = document.getElementById('sg-dir').value;
+  const sideLabel = side==='party1'?'Нэхэмжлэгч/нэг талын ашгийг хамгаалах чиглэлд':
+    side==='party2'?'Хариуцагч/нөгөө талын ашгийг хамгаалах чиглэлд':'Хоёр талд тэнцвэртэй';
+
+  const prompt = `Та Монголын гэрээний хуулийн мэргэжлийн зөвлөх юм.
+${sideLabel} дараах гэрээнд засвар, нэмэлт оруулах санал боловсруулна уу.${dir?`\nОнцлог хүсэлт: ${dir}`:''}
+legalinfo.mn дээрх Монголын хүчинтэй хуулиудад үндэслэнэ үү.
+Хариултыг гэрээний хэлбэрт тохируулна уу.
+
+---
+${text.slice(0,12000)}
+---
+
+Доорх бүтцээр засварын санал боловсруулна уу:
+
+# ГЭРЭЭНИЙ ЗАСВАРЫН САНАЛ
+
+## Нийт үнэлгээ ба засварын чиглэл
+
+## Заалт тус бүрийн засварын санал
+
+### [Заалтын дугаар/нэр] — [Асуудлын нэр]
+
+**Одоогийн текст:**
+> (гэрээнээс яг тухайн заалтыг хуулж бичнэ)
+
+**Засварын санал:**
+> (шинэ, засагдсан текст — гэрээнд шууд оруулах хэлбэрт бичнэ)
+
+**Засварын шалтгаан:**
+(яагаад засах шаардлагатай, ямар эрсдэлийг арилгаж байгаа)
+
+**Хуулийн үндэслэл:** [legalinfo.mn-ийн хуулийн нэр, зүйл]
+
+---
+
+## Нэмэх шаардлагатай шинэ заалтууд
+(одоо байхгүй боловч нэмэхийг зөвлөж буй заалт бүрт бэлэн текст санал болгоно)
+
+### [Нэмэх заалтын нэр]
+**Санал болгосон текст:**
+> (гэрээнд шууд оруулах бэлэн текст)
+
+**Нэмэх шалтгаан:**
+**Хуулийн үндэслэл:**
+
+## Устгах/Хөнгөвчлөх заалтууд
+
+## Эцсийн зөвлөмж`;
+
+  setBtnDisabled('sg-btn',true);
+  loading('sg-load','sg-res',true);
+  document.getElementById('sg-res').classList.add('hidden');
+  try {
+    const r = await claude(model, prompt);
+    renderMD('sg-out', r);
+    loading('sg-load','sg-res',false);
+    document.getElementById('sg-res').scrollIntoView({behavior:'smooth'});
+  } catch(e) { alert('Алдаа: '+e.message); document.getElementById('sg-load').classList.add('hidden'); }
+  setBtnDisabled('sg-btn',false);
+}
+
+// ══════════════════════════════════
+// CONTRACT DRAFT
+// ══════════════════════════════════
+async function doDraft() {
+  const p1 = document.getElementById('dr-p1').value;
+  const p2 = document.getElementById('dr-p2').value;
+  if (!p1||!p2) { alert('Талуудын нэрийг оруулна уу'); return; }
+  const model = document.getElementById('dr-m').value;
+  const ct    = document.getElementById('dr-t').value;
+  const lang  = document.getElementById('dr-l').value;
+  const det   = document.getElementById('dr-d').value;
+  const ll = lang==='mn'?'Монгол хэлээр':lang==='en'?'English language':'Монгол болон Англи хоёр хэлээр давхар (МН/EN хавсарсан)';
+
+  const prompt = `Та Монголын хуулийн мэргэжлийн зөвлөх юм.
+Доорх мэдээлэлд үндэслэн ${ct} боловсруулна уу.
+Хэл: ${ll}
+legalinfo.mn дээрх Монголын хүчинтэй хуулиудад нийцсэн бүрэн, хуулийн хүчин төгөлдөр гэрээний төсөл бичнэ үү.
+
+НЭГ ТАЛ: ${p1}
+НӨГӨӨ ТАЛ: ${p2}
+ГОЛ НӨХЦӨЛ: ${det}
+
+Гэрээний бүтэц:
+**ГЭРЭЭ**
+Огноо: ___, газар: ___
+
+**1. НЭР ТОМЬЁО, ТОДОРХОЙЛОЛТ**
+**2. ГЭРЭЭНИЙ ЗҮЙ, АГУУЛГА**
+**3. ҮНЭ, ТӨЛБӨРИЙН НӨХЦӨЛ**
+**4. ТАЛУУДЫН ЭРХ, ҮҮРЭГ**
+**5. ГЭРЭЭНИЙ ХУГАЦАА**
+**6. ХАРИУЦЛАГА, ТОРГУУЛЬ**
+**7. ДАВАГДАШГҮЙ ХҮЧИН ЗҮЙЛ (FORCE MAJEURE)**
+**8. НУУЦЛАЛ**
+**9. МАРГААН ШИЙДВЭРЛЭХ ЖУРАМ**
+**10. ГЭРЭЭ ЦУЦЛАХ ҮНДЭСЛЭЛ**
+**11. БУСАД НӨХЦӨЛ**
+**12. ТАЛУУДЫН МЭДЭЭЛЭЛ, ГАРЫН ҮСЭГ**
+
+Гэрээний хуулийн үндэслэлийг (legalinfo.mn зүйл, хэсэг) холбогдох заалт бүрд тэмдэглэнэ үү.`;
+
+  setBtnDisabled('dr-btn',true);
+  loading('dr-load','dr-res',true);
+  document.getElementById('dr-res').classList.add('hidden');
+  try {
+    const r = await claude(model, prompt);
+    renderMD('dr-out', r);
+    loading('dr-load','dr-res',false);
+    document.getElementById('dr-res').scrollIntoView({behavior:'smooth'});
+  } catch(e) { alert('Алдаа: '+e.message); document.getElementById('dr-load').classList.add('hidden'); }
+  setBtnDisabled('dr-btn',false);
+}
+
+// ══════════════════════════════════
+// FILE CONVERT
+// ══════════════════════════════════
+let cvFile = null;
+
+function onCvFile(files) {
+  cvFile = Array.isArray(files) ? files[0] : files;
+  document.getElementById('cv-opts').classList.remove('hidden');
+  if (cvFile && cvFile.name.match(/\.(png|jpg|jpeg)$/i)) document.getElementById('cv-ol').value = 'claude';
+}
+
+function cvSt(msg) { document.getElementById('cv-st').textContent = msg; }
+
+async function doConvert() {
+  if (!cvFile) { alert('Файл сонгоно уу'); return; }
+  const lang = document.getElementById('cv-ol').value;
+  setBtnDisabled('cv-btn',true);
+  loading('cv-load','cv-res',true);
+  document.getElementById('cv-res').classList.add('hidden');
+  let text = '';
+  try {
+    if (cvFile.name.match(/\.txt$/i)) {
+      cvSt('Текст уншиж байна...');
+      text = await cvFile.text();
+    } else if (cvFile.name.match(/\.docx?$/i)) {
+      cvSt('Word файл задалж байна...');
+      const b=await cvFile.arrayBuffer();
+      text=(await mammoth.extractRawText({arrayBuffer:b})).value;
+    } else if (cvFile.name.match(/\.pdf$/i)) {
+      cvSt('PDF текст задалж байна...');
+      text = await readPDF(cvFile);
+      // Хэрэв текст маш цөөн байвал (зурган PDF) → Claude Vision ашиглах
+      const buf = await cvFile.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+      const avgCharsPerPage = text.length / pdf.numPages;
+      if (avgCharsPerPage < 5) {
+        cvSt('Зурган PDF илэрлэв — Claude Vision ашиглаж байна...');
+        text = await pdfVisionAll(cvFile, cvSt);
+      }
+    } else if (cvFile.name.match(/\.(png|jpg|jpeg)$/i)) {
+      if (lang==='claude') {
+        cvSt('Claude Vision-оор текст гарган авч байна...');
+        text = await imgVision(cvFile);
+      } else {
+        cvSt('Tesseract OCR-ээр боловсруулж байна...');
+        text = await imgOCR(cvFile, lang);
+      }
+    }
+    if (!text||text.trim().length<3) text = '[Текст гарган авах боломжгүй байна]';
+    document.getElementById('cv-out').textContent = text;
+    loading('cv-load','cv-res',false);
+    document.getElementById('cv-res').scrollIntoView({behavior:'smooth'});
+  } catch(e) { alert('Алдаа: '+e.message); document.getElementById('cv-load').classList.add('hidden'); }
+  setBtnDisabled('cv-btn',false);
+}
+
+async function imgVision(f) {
+  const b64=await readImgB64(f), mime=f.type||'image/jpeg', key=getKey();
+  if(!key) throw new Error('API key байхгүй');
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4096,messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+      {type:'text',text:'Энэ зурган дахь бүх текстийг яг эх хэлбэрээр, формат хадгалан гарган ав. Зөвхөн текст, тайлбаргүй. Монгол үгийг гажуудуулахгүй, яг байгаагаар нь бич.'}
+    ]}]})});
+  const d=await r.json(); return d.content[0].text;
+}
+
+// Бүх хуудасны Vision — 3 хуудсыг нэг дуудалтаар илгээнэ
+async function pdfVisionAll(f, statusCb, maxPages) {
+  const key=getKey(); if(!key) return '[API key байхгүй]';
+  const stFn = statusCb || cvSt;
+  const buf=await f.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  const total = maxPages ? Math.min(pdf.numPages, maxPages) : pdf.numPages;
+  let allText='';
+  const batchSize=5; // 3→5: дуудалт 40% цөөрнө
+
+  for(let start=1; start<=total; start+=batchSize){
+    const end=Math.min(start+batchSize-1,total);
+    stFn(`Хуудас ${start}–${end} / ${total} боловсруулж байна...`);
+
+    const content=[];
+    for(let p=start; p<=end; p++){
+      const page=await pdf.getPage(p);
+      const vp=page.getViewport({scale:1.4});
+      const cv=document.createElement('canvas');
+      cv.width=vp.width; cv.height=vp.height;
+      await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+      const b64=cv.toDataURL('image/jpeg',0.8).split(',')[1];
+      content.push({type:'text',text:`=== Хуудас ${p} ===`});
+      content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}});
+    }
+    content.push({type:'text',text:'Дээрх '+Math.min(batchSize,total-start+1)+' хуудасны бүх текстийг яг эх хэлбэрээр гарган ав. Монгол үгийг гажуудуулахгүй. Хуудас бүрийн эхэнд "=== Хуудас N ===" гэж тэмдэглэ. Зөвхөн текст, тайлбаргүй.'});
+
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4096,messages:[{role:'user',content}]})
+    });
+    const d=await r.json();
+    if(d.error) throw new Error(d.error.message);
+    allText+=d.content[0].text+'\n\n';
+  }
+  return allText.trim();
+}
+
+async function imgOCR(f, lang) {
+  if(typeof Tesseract==='undefined') throw new Error('Tesseract ачаалагдаагүй');
+  const lmap={'mn+eng':'mon+eng','eng':'eng','mn':'mon'};
+  const result=await Tesseract.recognize(f,lmap[lang]||'mon+eng',{
+    logger:m=>{ if(m.status==='recognizing text') cvSt('OCR: '+Math.round(m.progress*100)+'%'); }});
+  return result.data.text;
+}
+
+// ══════════════════════════════════
+// COURT BRIEF
+// ══════════════════════════════════
+function toggleContinue(prefix) {
+  const on = document.getElementById(prefix+'-cont').checked;
+  document.getElementById(prefix+'-cont-area').classList.toggle('hidden', !on);
+}
+
+async function doBrief() {
+  const docs = document.getElementById('kb-docs').value.trim();
+  const hasFile = !document.getElementById('kb-b').classList.contains('hidden');
+  if (!docs && !hasFile) { alert('Файл оруулах эсвэл текст бичнэ үү'); return; }
+  if (!docs) { alert('Файл уншигдсан боловч текст хоосон байна. Файлыг дахин оруулна уу.'); return; }
+  const model  = document.getElementById('kb-m').value;
+  const court  = document.getElementById('kb-court').value;
+  const caseNo = document.getElementById('kb-no').value;
+  const pl     = document.getElementById('kb-pl').value;
+  const df     = document.getElementById('kb-df').value;
+  const claim  = document.getElementById('kb-cl').value;
+
+  const isCont = document.getElementById('kb-cont').checked;
+  const prevWork = isCont ? document.getElementById('kb-prev').value.trim() : '';
+
+  const tableSpec = `Хүснэгтийн баганууд:
+1. **Баримтын нэр** — нэр, төрөл (гэрээ, акт, захирамж, гэрчилгээ г.м.)
+2. **Огноо** — баримтын огноо (мэдэгдэхгүй бол "–")
+3. **Хавтас / Хуудас** — хэддүгээр хавтаст, хэдэн дэх хуудас. ГАРААР бичсэн дугаарыг "(г)" тэмдэглэ. Жишээ: "Хавтас 1 / х.15(г)"
+4. **Агуулга** — юуг баталгаажуулж байгааг 1-2 өгүүлбэрт товчилно
+
+ЗӨВХӨН хүснэгт — нэмэлт тайлбар, гарчиг нэмэхгүй.`;
+
+  const prompt = isCont && prevWork
+    ? `Та хэргийн баримт бичгүүдийн жагсаалтыг үргэлжлүүлж боловсруулна уу.
+
+ӨМНӨХ ЖАГСААЛТ:
+---
+${prevWork.slice(0,7000)}
+---
+
+НЭМЭЛТ МАТЕРИАЛ:
+---
+${docs.slice(0,7000)}
+---
+
+ЗААВАР: Өмнөх жагсаалтыг үндэс болго. Нэмэлт материалаас өмнөхөд байхгүй шинэ баримт бичгүүдийг нэм. Огноо, хуудас дутуу байвал нарийвчил. Хасах зүйлгүй. Эцсийн нэгдсэн хүснэгтийг гаргана уу.
+
+${tableSpec}`
+    : `Та хэргийн материалыг уншиж, баримт бичгүүдийн жагсаалтыг Markdown хүснэгт хэлбэрээр гаргана уу.
+
+ХЭРГИЙН МЭДЭЭЛЭЛ:
+Шүүх: ${court||'–'}  |  Хэргийн дугаар: ${caseNo||'–'}
+Нэхэмжлэгч: ${pl||'–'}  |  Хариуцагч: ${df||'–'}
+Нэхэмжлэлийн шаардлага: ${claim||'–'}
+
+ХЭРГИЙН МАТЕРИАЛ:
+---
+${docs.slice(0,13000)}
+---
+
+${tableSpec}`;
+
+  setBtnDisabled('kb-btn',true);
+  loading('kb-load','kb-res',true);
+  document.getElementById('kb-res').classList.add('hidden');
+  try {
+    const r = await claude(model, prompt, null, null, 8192);
+    renderMD('kb-out', r);
+    loading('kb-load','kb-res',false);
+    document.getElementById('kb-res').scrollIntoView({behavior:'smooth'});
+  } catch(e) { alert('Алдаа: '+e.message); document.getElementById('kb-load').classList.add('hidden'); }
+  setBtnDisabled('kb-btn',false);
+}
+
+// ══════════════════════════════════
+// AUTO-FILL HEARING INFO FROM DOCS
+// ══════════════════════════════════
+async function autoFillHearing() {
+  const docs = document.getElementById('kh-docs').value.trim();
+  if (!docs) { alert('Эхлээд файл оруулна уу.\n\nФайлын дохио харагдаж байгаа бол хүлээгээрэй — PDF/Vision уншилт хэдэн минут үргэлжлэх тул бэлэн болмогц товчийг дарна уу.'); return; }
+  setBtnDisabled('kh-auto', true);
+  document.getElementById('kh-auto').textContent = '⏳ Уншиж байна...';
+  try {
+    const key = getKey(); if (!key) throw new Error('key байхгүй');
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:512,messages:[{role:'user',content:[{type:'text',text:
+        `Дараах хэргийн материалаас мэдээллийг гарган авч JSON форматаар хариулна уу.
+Зөвхөн JSON, тайлбаргүй:
+{"court":"шүүхийн нэр","case_no":"хэргийн дугаар","plaintiff":"нэхэмжлэгч","defendant":"хариуцагч","judge":"шүүгчийн нэр эсвэл хоосон","position":"хуулийн тусгай хүсэлт эсвэл чиглэл"}
+
+МАТЕРИАЛ:
+---
+${docs.slice(0,4000)}
+---`}]}]})
+    });
+    const d = await r.json();
+    const txt = d.content[0].text.trim();
+    const m = txt.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('JSON олдсонгүй');
+    const info = JSON.parse(m[0]);
+    if (info.judge) document.getElementById('kh-jd').value = info.judge;
+    if (info.position) document.getElementById('kh-pos').value = info.position;
+    // Brief fields also if open
+    if (info.court) { const el=document.getElementById('kb-court'); if(el&&!el.value) el.value=info.court; }
+    if (info.case_no) { const el=document.getElementById('kb-no'); if(el&&!el.value) el.value=info.case_no; }
+    if (info.plaintiff) { const el=document.getElementById('kb-pl'); if(el&&!el.value) el.value=info.plaintiff; }
+    if (info.defendant) { const el=document.getElementById('kb-df'); if(el&&!el.value) el.value=info.defendant; }
+    document.getElementById('kh-auto').textContent = '✅ Бөглөгдлөө';
+  } catch(e) {
+    alert('Автомат бөглөх алдаа: '+e.message);
+    document.getElementById('kh-auto').textContent = '🔍 Мэдээлэл автоматаар бөглөх';
+  }
+  setBtnDisabled('kh-auto', false);
+}
+
+// ══════════════════════════════════
+// COURT HEARING PREP — ЭТНО загвараар
+// ══════════════════════════════════
+async function doHearing() {
+  const docs = document.getElementById('kh-docs').value.trim();
+  if (!docs) { alert('Файл оруулах эсвэл текст paste хийнэ үү'); return; }
+  const model = document.getElementById('kh-m').value;
+  const dt    = document.getElementById('kh-dt').value;
+  const jd    = document.getElementById('kh-jd').value;
+  const pos   = document.getElementById('kh-pos').value;
+  const isCont = document.getElementById('kh-cont').checked;
+  const prevWork = isCont ? document.getElementById('kh-prev').value.trim() : '';
+
+  const today_mn = new Date().toLocaleDateString('mn-MN');
+
+  const baseInstructions = `ЧУХАЛ ЗААВРУУД:
+- Материалд байгаа бүх мэдээллийг ДЭЛГЭРЭНГҮЙ гарган ав. Мэдэгдэхгүй зүйлийг "–" гэж тэмдэглэ.
+- "Анхаарамж", "Дутлагдлын хүснэгт", "материал хүрэлцэхгүй" зэрэг мессеж ОГТХОН ГАРГАХГҮЙ.
+- Материал нь PDF OCR-оор уншсан байж болно — хуулийн зөв нэр томьёогоор засаж бич.
+- legalinfo.mn-ийн хүчинтэй хуулиудыг яг хуулийн нэр, зүйл, хэсгийн дугаарын хамт дурдана уу.
+- Бүх хэсэг дүүрэн байх ёстой. Товч бичихгүй — нарийн дэлгэрэнгүй бич.`;
+
+  const templateSections = `
+## 0. Процессын одоогийн байдал
+
+### 0.1 Тогтоогдсон үйл баримт
+(Материалаас гарган авсан бодит баримт, шийдвэрийн дугаар, огноо бүхий жагсаалт — дор хаяж 5–10 зүйл)
+
+- **[огноо]** — [үйл баримт, баримтын нэр/дугаар]
+
+### 0.2 Шийдвэрлэх гол асуудлууд / маргааны цэгүүд
+(Энэ хуралдаанд шийдвэрлэх гол маргааны цэгүүд, эсрэг талын аргументуудыг тодорхой тайлбарлана)
+
+---
+
+## 1. Хэргийн он цагийн дараалал
+
+| Огноо | Үйл явдал | Баримт / Байршил |
+|-------|-----------|-----------------|
+
+---
+
+## 2. Гол аргументууд (шүүх дэх байр суурь)
+
+### 2.1 Бидний үндсэн аргументууд
+(Шүүх дэх нотлолтын гол аргументуудыг дарааллаар жагсаана — хүчтэйгээс сул руу)
+
+1. **[Аргументын гарчиг]**
+   - Нотлох баримт: [баримтын нэр, дугаар]
+   - Хуулийн үндэслэл: [хуулийн нэр, зүйл]
+   - Тайлбар: [яагаад энэ аргумент чухал болох]
+
+2. **[Аргументын гарчиг]**
+   - Нотлох баримт:
+   - Хуулийн үндэслэл:
+   - Тайлбар:
+
+### 2.2 Хамгаалах байр суурийн дараалал (шүүх дэх ярианы чиглэл)
+(Хэрхэн эхлэх, ямар дарааллаар аргумент дэвшүүлэх, хамгийн хүчтэй нотлох баримтыг хэзээ гаргах)
+
+---
+
+## 3. Хуулийн шинжилгээ
+
+### 3.1 Хуулийн үндэслэл
+
+| Хуулийн нэр (legalinfo.mn) | Зүйл, хэсэг | Хэрэгт хэрхэн хамаарах |
+|---------------------------|-------------|------------------------|
+
+### 3.2 Дээд шатны шүүхийн шийдвэр / Хэвшмэл практик
+(Материалд дурдагдсан буюу энэ маргааны төрөлтэй холбоотой Монгол улсын дээд шүүх / давж заалдах шатны шүүхийн шийдвэрийг дурдана. Шийдвэр дугаар, он, гол утга товч.)
+
+| Шийдвэрийн дугаар / Он | Шийдвэрийн гол утга | Бидний хэрэгт хэрхэн ашиглах |
+|------------------------|---------------------|------------------------------|
+
+---
+
+## 4. Нотлох баримтын шинжилгээ
+
+| Нотлох баримт | Юу нотлох | Хуралдаанд хэрхэн ашиглах | Төлөв / Байршил |
+|---------------|-----------|--------------------------|----------------|
+
+---
+
+## 5. Хариуцагч / гуравдагч этгээдэд асуух асуулт
+
+(Этгээд бүрд тусдаа хэсэг. Асуулт бүр стратегийн зорилготой — хариуцагчид тохиромжгүй баримт гаргуулах, зөрчилтэй мэдэгдэл хийлгэх зорилготой)
+
+### [Этгээдийн нэр]-д асуух асуулт:
+1. [Стратегийн асуулт — баримт, огноо хамт]
+
+---
+
+## 6. Эсрэг талын аргумент ба бидний хариу
+
+| Эсрэг талын аргумент | Бидний хариу | Ашиглах нотлох баримт |
+|---------------------|-------------|----------------------|
+
+---
+
+## 7. Шүүгчийн болзошгүй асуулт ба бэлтгэл хариу
+
+1. **Асуулт:** [шүүгчийн болзошгүй асуулт]
+   **Хариу:** [бэлтгэсэн хариу — нотлох баримт, хуулийн заалт хамт]
+
+---
+
+## 8. Эрсдэл, сул тал ба бэлтгэл
+
+| Эрсдэл / Сул тал | Ноцтой байдал | Эрсдэл бууруулах арга |
+|------------------|--------------|----------------------|
+
+---
+
+## 9. Хуралдааны дараа хийх ажиллагаа
+
+(Хуралдааны үр дүнд хамааран хийх ёстой алхамуудыг жагсаана)`;
+
+  const prompt = isCont && prevWork
+    ? `Та туршлагатай өмгөөлөгч юм. Шүүх хуралдааны дотоод бэлтгэлийн материалыг үргэлжлүүлж, шинэ материалаар баяжуулна уу.
+
+${baseInstructions}
+
+Хуралдааны огноо: ${dt||'–'}  |  Шүүгч: ${jd||'–'}
+Байр суурь: ${pos||'Мэдэгдээгүй'}
+
+ӨМНӨХ БЭЛТГЭЛ:
+---
+${prevWork.slice(0,7000)}
+---
+
+НЭМЭЛТ МАТЕРИАЛ:
+---
+${docs.slice(0,7000)}
+---
+
+ЗААВАР: Өмнөх бэлтгэлийг үндэс болгон авна. Шинэ материалаас олдсон мэдээллээр хэсэг бүрийг нэмж, сайжруулж, гүнзгийрүүлнэ. Хасах зүйлгүй — зөвхөн нэмэх, боловсруулах. Доорх бүрэн загварын дагуу БҮРЭН дүүрэн гаргана уу:
+
+# ӨМГӨӨЛЛИЙН ДОТООД БЭЛТГЭЛ
+
+## Шүүх хуралдаан дахь өмгөөлөл
+| Зүйл | Утга |
+|------|------|
+| Шүүх | |
+| Хэргийн дугаар | |
+| Хуралдааны огноо | ${dt||'–'} |
+| Шүүгч | ${jd||'–'} |
+| Нэхэмжлэгч / Өмгөөлөгч | |
+| Хариуцагч | |
+| Нэхэмжлэлийн шаардлага | |
+| Бэлтгэсэн | ${today_mn} |
+${templateSections}`
+    : `Та туршлагатай, мэргэшсэн өмгөөлөгч юм. Доорх хэргийн материалд үндэслэн шүүх хуралдааны өмгөөллийн дотоод бэлтгэлийн материал боловсруулна уу.
+
+${baseInstructions}
+
+Хуралдааны огноо: ${dt||'–'}  |  Шүүгч: ${jd||'–'}
+Байр суурь: ${pos||'Мэдэгдээгүй'}
+
+ХЭРГИЙН МАТЕРИАЛ:
+---
+${docs.slice(0,14000)}
+---
+
+Доорх загварын дагуу БҮРЭН дүүрэн, НАРИЙН ДЭЛГЭРЭНГҮЙ боловсруулна уу:
+
+# ӨМГӨӨЛЛИЙН ДОТООД БЭЛТГЭЛ
+
+## Шүүх хуралдаан дахь өмгөөлөл
+| Зүйл | Утга |
+|------|------|
+| Шүүх | |
+| Хэргийн дугаар | |
+| Хуралдааны огноо | ${dt||'–'} |
+| Шүүгч | ${jd||'–'} |
+| Нэхэмжлэгч / Өмгөөлөгч | |
+| Хариуцагч | |
+| Нэхэмжлэлийн шаардлага | |
+| Бэлтгэсэн | ${today_mn} |
+${templateSections}`;
+
+  setBtnDisabled('kh-btn',true);
+  loading('kh-load','kh-res',true);
+  document.getElementById('kh-res').classList.add('hidden');
+  try {
+    const r = await claude(model, prompt, null, null, 8192);
+    renderMD('kh-out', r);
+    loading('kh-load','kh-res',false);
+    document.getElementById('kh-res').scrollIntoView({behavior:'smooth'});
+  } catch(e) { alert('Алдаа: '+e.message); document.getElementById('kh-load').classList.add('hidden'); }
+  setBtnDisabled('kh-btn',false);
+}
+
+// ══════════════════════════════════
+// SIMILAR CASES
+// ══════════════════════════════════
+async function doSimilar() {
+  const desc = document.getElementById('sm-d').value.trim();
+  if (!desc) { alert('Хэргийн тодорхойлолт оруулна уу'); return; }
+  const model = document.getElementById('sm-m').value;
+  const type  = document.getElementById('sm-t').value;
+
+  // Хайлтын URL-д ашиглах keyword
+  const searchKeywords = encodeURIComponent(desc.substring(0,60).replace(/\n/g,' '));
+  const typeKeyword = encodeURIComponent(type);
+
+  const prompt = `Та Монголын эрх зүйн мэргэжилтэн юм. ЧУХАЛ ДҮРМҮҮД:
+
+1. ХЭЗЭЭ Ч хуурамч шийдвэрийн дугаар, хуурамч хэргийн нэр БҮҮР ГАРГАХ. Бодит дугаар мэдэхгүй бол "дугаарыг shuukh.mn-ээс шалгах шаардлагатай" гэж тэмдэглэ.
+2. ЗӨВХӨН эдгээр зөв шүүхийн нэрийг ашиглана: "анхан шатны шүүх", "давж заалдах шатны шүүх", "Монгол Улсын Дээд шүүх". "Төв шүүх", "Апиляц шүүх", "Төвлөрсөн шүүх" гэдэг нь БАЙХГҮЙ, хэзээ ч ашиглахгүй.
+3. ЗӨВХӨН legalinfo.mn дээр бодитоор байдаг хуулийн нэрийг ашиглана (Монгол Улсын Иргэний хууль, Иргэний хэрэг шүүхэд хянан шийдвэрлэх тухай хууль, Компанийн тухай хууль, Хөдөлмөрийн тухай хууль, Газрын тухай хууль, Гэр бүлийн тухай хууль, Хэрэглэгчийн эрхийг хамгаалах тухай хууль, Арбитрын тухай хууль гэх мэт). Оршихгүй хуулийн нэр ГАРГАХГҮЙ.
+4. Биечлэн shuukh.mn дээр хандах боломжгүй тул бодит шийдвэрийн дугаар мэдэхгүй. Харин хайлтын стратеги, линк өгнө.
+
+Хэргийн ангилал: ${type}
+Хэргийн тодорхойлолт: ${desc}
+
+# ИЖИЛ ШҮҮХИЙН ШИЙДВЭРИЙН СУДАЛГАА
+
+## 1. Таны хэрэгт хамаарах БОДИТ хуулийн заалтууд
+
+(ЗӨВХӨН legalinfo.mn-д байгаа бодит хуулийн нэрийг хэрэглэ)
+
+| Хуулийн нэр | Зүйл, хэсэг, заалт | Таны хэрэгт хамаарах байдал |
+|------------|-------------------|---------------------------|
+| [бодит хуулийн нэр] | [жишээ: 281 дүгээр зүйлийн 281.1] | [яаж хамаарах] |
+
+---
+
+## 2. shuukh.mn дээрх ХАЙЛТЫН ЛИНКҮҮД
+
+Доорх линкүүд дээр дарж shuukh.mn-ийн мэдээллийн санд шууд хайлт хийнэ үү:
+
+**Үндсэн хайлт:**
+[🔎 shuukh.mn-д "**${type}**" хайх](https://www.shuukh.mn/home/search?q=${typeKeyword})
+
+**Нарийн хайлт:**
+[🔎 shuukh.mn-д хэргийн дэлгэрэнгүй хайлт](https://www.shuukh.mn/home/search?q=${searchKeywords})
+
+**Монгол Улсын Дээд шүүх:**
+[🏛️ Дээд шүүхийн мэдээллийн сан](https://supremecourt.mn/mn/content/145)
+
+---
+
+## 3. Энэ төрлийн хэрэгт Монголын шүүхийн ТҮГЭЭМЭЛ ШИЙДВЭРЛЭХ ХАНДЛАГА
+
+(Бодит хэргийн дугаар гаргахгүй. Монголын шүүхийн практикт энэ төрлийн маргаанд ямар хандлага давамгайлдагийг дүрслэн тайлбарла)
+
+### Анхан шатны шүүхийн ердийн хандлага:
+[тайлбар]
+
+### Давж заалдах шатны шүүхийн хандлага:
+[тайлбар]
+
+### Монгол Улсын Дээд шүүхийн зарчмын шийдвэрүүд:
+[Дээд шүүхийн тогтсон байр суурийн тухай ерөнхий тайлбар — дугаар гаргахгүй, зарчмыг л дурдах]
+
+---
+
+## 4. Өмгөөлөгч болгоомжлох зүйлс
+
+- Эсрэг тал ашиглаж болох хуулийн үндэслэл
+- Хариу аргумент
+
+---
+
+## 5. shuukh.mn-д хайхад зөвлөмж болгох НЭР ТОМЬЁО
+
+Доорх үгсийг хайлтанд оруулж шийдвэр хай:
+- "[нэр томьёо 1]"
+- "[нэр томьёо 2]"
+- "[нэр томьёо 3]"
+
+⚠️ **Тайлбар:** Claude нь shuukh.mn болон Дээд шүүхийн мэдээллийн санд биечлэн хандах боломжгүй тул шийдвэрийн дугаарыг баталж чадахгүй. Бодит шийдвэрийг дээрх линкүүдээр шалгана уу.`;
+
+  setBtnDisabled('sm-btn',true);
+  loading('sm-load','sm-res',true);
+  document.getElementById('sm-res').classList.add('hidden');
+  try {
+    const r = await claude(model, prompt, null, null, 8192);
+    renderMD('sm-out', r);
+    loading('sm-load','sm-res',false);
+    document.getElementById('sm-res').scrollIntoView({behavior:'smooth'});
+  } catch(e) { alert('Алдаа: '+e.message); document.getElementById('sm-load').classList.add('hidden'); }
+  setBtnDisabled('sm-btn',false);
+}
+
+// ── HELPERS ──────────────────────────────────────
+function setBtnDisabled(id, v) { const b=document.getElementById(id); if(b) b.disabled=v; }
+
+function getOutText(id) {
+  const el = document.getElementById(id);
+  return el.innerText || el.textContent || '';
+}
+
+function dlTxt(id, name) {
+  const text = getOutText(id); if(!text) return;
+  dl(new Blob([text],{type:'text/plain;charset=utf-8'}), name+'_'+today()+'.txt');
+}
+
+function dlTxtRaw(id, name) {
+  const text = document.getElementById(id).textContent; if(!text) return;
+  dl(new Blob([text],{type:'text/plain;charset=utf-8'}), name+'_'+today()+'.txt');
+}
+
+// Word export — rendered HTML-г шууд ашиглана (format бүрэн хадгална)
+function dlDoc(id, name) {
+  const inner = document.getElementById(id).innerHTML;
+  if (!inner || inner.trim() === '') return;
+  const wordHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'>
+<style>
+@page { margin: 2.5cm 2.5cm 2.5cm 2.5cm; }
+body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.75; color: #1a1a2e; }
+h1 { font-size: 16pt; font-weight: bold; text-align: center; color: #1a1a2e;
+     margin: 18pt 0 8pt; border-bottom: 2pt solid #1a1a2e; padding-bottom: 5pt; }
+h2 { font-size: 13pt; font-weight: bold; color: #1e3a5f; background: #e8edf5;
+     padding: 5pt 8pt; margin: 16pt 0 6pt; border-left: 4pt solid #1e3a5f; }
+h3 { font-size: 11.5pt; font-weight: bold; color: #1e3a5f; margin: 12pt 0 5pt;
+     padding: 3pt 0; border-bottom: 1pt solid #d1d5db; }
+h4 { font-size: 11pt; font-weight: bold; margin: 8pt 0 3pt; color: #374151; }
+p { margin: 4pt 0 7pt; }
+ul { padding-left: 18pt; margin: 5pt 0 8pt; list-style-type: disc; }
+ol { padding-left: 18pt; margin: 5pt 0 8pt; }
+li { margin: 3pt 0; line-height: 1.65; }
+table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
+th { background: #1a1a2e; color: #ffffff; padding: 7pt 9pt; font-size: 10pt;
+     font-weight: bold; text-align: left; border: 1pt solid #1a1a2e; }
+td { padding: 6pt 9pt; border: 1pt solid #b0b8c4; font-size: 10pt; vertical-align: top; }
+tr:nth-child(even) td { background: #f0f4f8; }
+strong { font-weight: bold; }
+em { font-style: italic; }
+hr { border: none; border-top: 1.5pt solid #d1d5db; margin: 12pt 0; }
+blockquote { border-left: 4pt solid #3b82f6; padding: 6pt 12pt;
+             background: #eff6ff; margin: 8pt 0; color: #1e40af; }
+code { font-family: Courier New, monospace; font-size: 10pt; background: #f1f5f9; padding: 1pt 4pt; }
+</style>
+</head>
+<body>${inner}</body></html>`;
+  dl(new Blob([wordHtml], {type:'application/msword;charset=utf-8'}), name+'_'+today()+'.doc');
+}
+
+function dlDocRaw(id, name) {
+  const text = document.getElementById(id).textContent; if(!text) return;
+  const html=`<html><head><meta charset='utf-8'><style>
+body{font-family:Arial;font-size:11pt;line-height:1.7;margin:2.5cm}
+pre{white-space:pre-wrap;font-family:Arial;font-size:11pt}
+</style></head><body><pre>${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`;
+  dl(new Blob([html],{type:'application/msword;charset=utf-8'}), name+'_'+today()+'.doc');
+}
+
+function dl(blob, fname) {
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:fname});
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+// ══════════════════════════════════
+// TRANSLATE
+// ══════════════════════════════════
+const LANG_NAMES = {mn:'Монгол',en:'Англи',zh:'Хятад',ru:'Орос',ja:'Япон',ko:'Солонгос',de:'Герман',fr:'Франц'};
+const STYLE_NAMES = {legal:'Хуулийн нэр томьёотой',formal:'Албан ёсны',plain:'Энгийн',contract:'Гэрээний хэлбэрт'};
+
+async function doTranslate() {
+  const txt = document.getElementById('tr-t').value.trim();
+  if (!txt) { alert('Орчуулах текст оруулна уу.'); return; }
+  const from = document.getElementById('tr-from').value;
+  const to = document.getElementById('tr-to').value;
+  const style = document.getElementById('tr-style').value;
+  const model = document.getElementById('tr-m').value;
+  const key = getKey(); if (!key) return;
+  setBtnDisabled('tr-btn', true);
+  loading('tr-load','tr-res',true);
+  document.getElementById('tr-check').classList.add('hidden');
+  try {
+    const prompt = `Та ${LANG_NAMES[from]} хэлнээс ${LANG_NAMES[to]} хэлрүү орчуулагч хуулийн мэргэжилтэн юм.
+
+Орчуулгын хэв маяг: ${STYLE_NAMES[style]}
+${to==='mn' || from==='mn' ? '\nМонгол хуулийн нэр томьёог зөв ашиглана уу. Хуулийн нэрийг бүтнээр нь, зөв монгол хэллэгтэйгээр бичнэ.' : ''}
+
+Дараах текстийг орчуулна уу. Зөвхөн орчуулга, тайлбаргүй:
+
+---
+${txt}
+---`;
+    const d = await callClaude(key, model, prompt, 4096);
+    renderMD('tr-out', d);
+    loading('tr-load','tr-res',false);
+    document.getElementById('tr-res').scrollIntoView({behavior:'smooth'});
+  } catch(e) { alert('Алдаа: '+e.message); document.getElementById('tr-load').classList.add('hidden'); }
+  setBtnDisabled('tr-btn', false);
+}
+
+async function doCrossCheck() {
+  const translated = document.getElementById('tr-out').textContent.trim();
+  const original = document.getElementById('tr-t').value.trim();
+  if (!translated) return;
+  const key = getKey(); if (!key) return;
+  document.getElementById('tr-check').classList.remove('hidden');
+  document.getElementById('tr-check-out').innerHTML = '<div class="spin-box"><div class="spinner"></div><p>Нягтлаж байна...</p></div>';
+  try {
+    const d = await callClaude(key, 'claude-haiku-4-5-20251001',
+      `Дараах орчуулгад хуулийн нэр томьёоны алдаа, буруу орчуулга байгаа эсэхийг шалга. Олдвол засварлаж тайлбарла.\n\nЭх:\n${original.slice(0,2000)}\n\nОрчуулга:\n${translated.slice(0,2000)}`, 1024);
+    renderMD('tr-check-out', d);
+  } catch(e) { document.getElementById('tr-check-out').textContent = 'Алдаа: '+e.message; }
+}
+
+// ══════════════════════════════════
+// CASE REGISTRY
+// ══════════════════════════════════
+function regGet() { return JSON.parse(localStorage.getItem('cases_v1')||'[]'); }
+function regSave(d) { localStorage.setItem('cases_v1', JSON.stringify(d)); }
+
+const REG_STATUS = {active:'🔵 Идэвхтэй',hearing:'🟡 Хуралдааны хүлээлт',appeal:'🟠 Давж заалдалт',done:'🟢 Дуусгавар'};
+const REG_COLOR = {active:'#3b82f6',hearing:'#f59e0b',appeal:'#f97316',done:'#22c55e'};
+
+function regAdd() {
+  const no = document.getElementById('reg-no').value.trim();
+  const name = document.getElementById('reg-name').value.trim();
+  if (!no && !name) { alert('Хэргийн дугаар эсвэл талуудын нэр оруулна уу.'); return; }
+  const cases = regGet();
+  cases.unshift({
+    id: Date.now(),
+    no, name,
+    status: document.getElementById('reg-status').value,
+    court: document.getElementById('reg-court').value.trim(),
+    next: document.getElementById('reg-next').value,
+    note: document.getElementById('reg-note').value.trim(),
+    created: today()
+  });
+  regSave(cases);
+  ['reg-no','reg-name','reg-court','reg-next','reg-note'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('reg-status').value='active';
+  regRender();
+}
+
+function regDelete(id) {
+  if (!confirm('Устгах уу?')) return;
+  regSave(regGet().filter(c=>c.id!==id));
+  regRender();
+}
+
+function regStatusChange(id, val) {
+  const cases = regGet();
+  const c = cases.find(x=>x.id===id);
+  if (c) { c.status=val; regSave(cases); regRender(); }
+}
+
+function regRender() {
+  const cases = regGet();
+  const el = document.getElementById('reg-list');
+  if (!el) return;
+  if (!cases.length) { el.innerHTML='<div style="text-align:center;color:#9ca3af;padding:30px;font-size:13px">📁 Бүртгэлтэй хэрэг байхгүй байна</div>'; return; }
+  el.innerHTML = cases.map(c=>`
+    <div class="card" style="border-left:4px solid ${REG_COLOR[c.status]||'#6b7280'};margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-weight:700;font-size:14px;color:#1a1a2e">${c.no||'—'} ${c.name ? '· '+c.name : ''}</div>
+          ${c.court ? `<div style="font-size:12px;color:#6b7280;margin-top:2px">🏛️ ${c.court}</div>` : ''}
+          ${c.next ? `<div style="font-size:12px;color:#2563eb;margin-top:2px">📅 Дараагийн хуралдаан: ${c.next}</div>` : ''}
+          ${c.note ? `<div style="font-size:12px;color:#374151;margin-top:5px">${c.note}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+          <select onchange="regStatusChange(${c.id},this.value)" style="font-size:11px;padding:3px 6px;border:1px solid #e5e7eb;border-radius:5px">
+            ${Object.entries(REG_STATUS).map(([k,v])=>`<option value="${k}"${c.status===k?' selected':''}>${v}</option>`).join('')}
+          </select>
+          <button onclick="regDelete(${c.id})" style="font-size:11px;padding:3px 8px;border:1px solid #fca5a5;color:#dc2626;background:#fff;border-radius:5px;cursor:pointer">🗑️ Устгах</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function regExport() {
+  const cases = regGet();
+  if (!cases.length) { alert('Бүртгэлтэй хэрэг байхгүй.'); return; }
+  const rows = [['Хэргийн дугаар','Талууд','Төлөв','Шүүх','Дараагийн хуралдаан','Тэмдэглэл','Бүртгэсэн огноо']];
+  cases.forEach(c=>rows.push([c.no,c.name,REG_STATUS[c.status]||c.status,c.court,c.next,c.note,c.created]));
+  const csv = rows.map(r=>r.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  dl(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}),'хэргийн_бүртгэл_'+today()+'.csv');
+}
+
+// JSON backup / restore
+function regExportJSON() {
+  const cases = regGet();
+  if (!cases.length) { alert('Бүртгэлтэй хэрэг байхгүй.'); return; }
+  dl(new Blob([JSON.stringify(cases, null, 2)], {type:'application/json'}), 'хэргийн_бүртгэл_'+today()+'.json');
+}
+
+function regImportJSON(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('Формат буруу');
+      if (!confirm(`${data.length} хэрэг импортлох уу? Одоогийн бүртгэлтэй нийлнэ (давхардахгүй).`)) return;
+      const existing = regGet();
+      const existIds = new Set(existing.map(c=>c.id));
+      const merged = [...existing, ...data.filter(c=>!existIds.has(c.id))];
+      regSave(merged);
+      regRender();
+      alert(`✅ ${data.length} хэрэг импортлогдлоо. Нийт: ${merged.length}`);
+    } catch(err) { alert('JSON файл алдаатай: ' + err.message); }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// Google Drive sync
+const DRIVE_FILE_NAME = 'хэргийн_бүртгэл_sync.json';
+
+function drvSetStatus(msg, ok) {
+  const el = document.getElementById('drv-status');
+  if (el) { el.textContent = msg; el.style.color = ok===false?'#f87171':ok===true?'#4ade80':'#94a3b8'; }
+}
+
+async function driveGetFileId() {
+  const cached = localStorage.getItem('drive_reg_file_id');
+  if (cached) return cached;
+  // Search Drive for the file
+  const res = await gFetch(`https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILE_NAME}' and trashed=false&fields=files(id,name)&spaces=drive`);
+  if (res.files && res.files.length > 0) {
+    localStorage.setItem('drive_reg_file_id', res.files[0].id);
+    return res.files[0].id;
+  }
+  return null;
+}
+
+async function driveSaveReg() {
+  if (!gToken) { alert('Эхлээд Харилцаа цэсээс Google акаунтаа нэвтрүүлнэ үү.'); return; }
+  drvSetStatus('Хадгалж байна...');
+  try {
+    const cases = regGet();
+    const body = JSON.stringify(cases, null, 2);
+    const blob = new Blob([body], {type:'application/json'});
+    let fileId = await driveGetFileId();
+
+    if (fileId) {
+      // Update existing file
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: 'PATCH',
+        headers: {'Authorization':'Bearer '+gToken, 'Content-Type':'application/json'},
+        body: blob
+      });
+    } else {
+      // Create new file
+      const meta = new Blob([JSON.stringify({name:DRIVE_FILE_NAME})], {type:'application/json'});
+      const form = new FormData();
+      form.append('metadata', meta);
+      form.append('file', blob);
+      const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST',
+        headers: {'Authorization':'Bearer '+gToken},
+        body: form
+      });
+      const d = await r.json();
+      if (d.id) { fileId = d.id; localStorage.setItem('drive_reg_file_id', fileId); }
+    }
+    drvSetStatus(`✅ Хадгалагдлаа (${cases.length} хэрэг) — ${new Date().toLocaleTimeString('mn-MN')}`, true);
+  } catch(e) {
+    drvSetStatus('❌ Алдаа: ' + e.message, false);
+  }
+}
+
+async function driveLoadReg() {
+  if (!gToken) { alert('Эхлээд Харилцаа цэсээс Google акаунтаа нэвтрүүлнэ үү.'); return; }
+  drvSetStatus('Drive-ээс татаж байна...');
+  try {
+    const fileId = await driveGetFileId();
+    if (!fileId) { drvSetStatus('Drive-т хадгалсан файл олдсонгүй.', false); return; }
+    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+      headers: {'Authorization':'Bearer '+gToken}
+    });
+    const data = await r.json();
+    if (!Array.isArray(data)) throw new Error('Файлын формат буруу');
+    if (!confirm(`Drive-т ${data.length} хэрэг байна. Татаж нийлүүлэх үү? (Одоогийн бүртгэлтэй нийлнэ)`)) return;
+    const existing = regGet();
+    const existIds = new Set(existing.map(c=>c.id));
+    const merged = [...existing, ...data.filter(c=>!existIds.has(c.id))];
+    regSave(merged);
+    regRender();
+    drvSetStatus(`✅ Татагдлаа (${data.length} хэрэг) — ${new Date().toLocaleTimeString('mn-MN')}`, true);
+  } catch(e) {
+    drvSetStatus('❌ Алдаа: ' + e.message, false);
+  }
+}
+
+// ══════════════════════════════════
+// NEWS
+// ══════════════════════════════════
+async function fetchNewsRSS(cat, scope) {
+  const PROXIES = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?url='
+  ];
+  const mnQueries = {
+    all:'монгол+улс', law:'монгол+хууль+шүүх',
+    politics:'монгол+улс+төр+засгийн+газар',
+    economy:'монгол+эдийн+засаг', aviation:'МИАТ+нисэх+онгоц',
+    international:'монгол+гадаад+харилцаа'
+  };
+  const worldQueries = {
+    all:'world politics law economy', law:'court verdict law ruling',
+    politics:'politics government parliament', economy:'economy finance markets',
+    aviation:'aviation airline flight ICAO', international:'international diplomacy UN treaty'
+  };
+
+  const feeds = [];
+  if (scope==='mn'||scope==='both') feeds.push(`https://news.google.com/rss/search?q=${encodeURIComponent(mnQueries[cat]||'монгол')}&hl=mn&gl=MN&ceid=MN:mn`);
+  if (scope==='world'||scope==='both') feeds.push(`https://news.google.com/rss/search?q=${encodeURIComponent(worldQueries[cat]||'world news')}&hl=en&gl=US&ceid=US:en`);
+
+  const items = [];
+  for (const feedUrl of feeds) {
+    let fetched = false;
+    for (const proxy of PROXIES) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(()=>controller.abort(), 8000);
+        const res = await fetch(proxy + encodeURIComponent(feedUrl), {signal: controller.signal});
+        clearTimeout(timer);
+        if (!res.ok) continue;
+        const text = await res.text();
+        const doc = new DOMParser().parseFromString(text, 'text/xml');
+        const rssItems = doc.querySelectorAll('item');
+        if (!rssItems.length) continue;
+        rssItems.forEach(item => {
+          const title = item.querySelector('title')?.textContent?.replace(/<[^>]*>/g,'').trim()||'';
+          const desc  = item.querySelector('description')?.textContent?.replace(/<[^>]*>/g,'').trim().slice(0,180)||'';
+          const pub   = item.querySelector('pubDate')?.textContent?.trim()||'';
+          const src   = item.querySelector('source')?.textContent?.trim()||'';
+          let link = item.querySelector('link')?.textContent?.trim()||item.querySelector('guid')?.textContent?.trim()||'';
+          if(title) items.push({title,desc,pub,src,link});
+        });
+        fetched = true; break;
+      } catch(e) { console.warn('RSS proxy failed:', proxy, e.message); }
+    }
+    if (!fetched) console.warn('All proxies failed for', feedUrl);
+  }
+  return items.slice(0, 15);
+}
+
+async function doNews() {
+  const cat   = document.getElementById('nw-cat').value;
+  const scope = document.getElementById('nw-scope').value;
+  const model = document.getElementById('nw-m').value;
+  const key = getKey(); if (!key) return;
+  setBtnDisabled('nw-btn', true);
+  loading('nw-load','nw-res',true);
+  document.getElementById('nw-date').textContent = new Date().toLocaleDateString('mn-MN',{year:'numeric',month:'long',day:'numeric'});
+
+  const catLabel = {
+    all:'улс төр, хууль, эдийн засгийн',law:'хуулийн болон шүүхийн',
+    politics:'улс төрийн',economy:'эдийн засгийн',
+    aviation:'нисэхийн салбарын',international:'олон улсын'
+  }[cat] || '';
+  const scopeLabel = {both:'Монгол болон дэлхийн',mn:'Монголын',world:'Дэлхийн'}[scope] || '';
+
+  const st = document.getElementById('nw-st');
+  function setSt(t) { if(st) st.textContent = t; }
+  function showErr(msg) {
+    document.getElementById('nw-load').classList.add('hidden');
+    document.getElementById('nw-out').innerHTML =
+      `<div style="color:#f87171;padding:16px;background:#1e293b;border-radius:8px;border:1px solid #ef4444">❌ ${msg}</div>`;
+    document.getElementById('nw-res').classList.remove('hidden');
+  }
+
+  // 1. RSS татах — 15с дотор, timeout-д хэтэрвэл хоосон array буцаана
+  setSt('📡 Google News-ээс мэдээ хайж байна...');
+  let newsItems = [];
+  try {
+    const raceResult = await Promise.race([
+      fetchNewsRSS(cat, scope),
+      new Promise(resolve => setTimeout(() => resolve([]), 15000))
+    ]);
+    newsItems = raceResult || [];
+  } catch(e) {
+    newsItems = [];
+    console.warn('RSS fetch error:', e.message);
+  }
+
+  // 2. Prompt бэлдэх — RSS байвал жинхэнэ мэдээгээр, байхгүй бол Claude мэдлэгт тулгуурлана
+  let prompt;
+  if (newsItems.length > 0) {
+    setSt(`✍️ ${newsItems.length} мэдээ татагдлаа, боловсруулж байна...`);
+    const headlineBlock = newsItems.map((it,i) =>
+      `${i+1}. ${it.title}${it.pub ? ' ['+it.pub+']' : ''}${it.src ? ' ('+it.src+')' : ''}${it.link ? '\n   URL: '+it.link : ''}`
+    ).join('\n');
+    prompt = `Та ${scopeLabel} ${catLabel} мэдээг хуулийн мэргэжилтэнд зориулан Монгол хэлээр хүргэдэг сэтгүүлч юм.
+
+Доорх Google News-ийн жинхэнэ мэдээний гарчгуудад тулгуурлан дэлгэрэнгүй тайлан бэлдэнэ үү:
+${headlineBlock}
+
+Хэвлэх загвар — мэдээ бүрт:
+📌 **[Гарчиг Монголоор](URL)** ← URL байвал Markdown линк болгоно
+*Эх сурвалж · Огноо*
+Агуулга 2-3 өгүүлбэрт (юу болсон, яагаад чухал)
+⚖️ Хуулийн ач холбогдол (хамааралтай тохиолдолд л)
+
+---
+Зөвхөн жагсаалтад байгаа мэдээг тайлбарлана. Хуурамч мэдээ, хуурамч линк нэмэхгүй. Мэдээний гарчгийг Монгол хэлэнд орчуулж болно.`;
+  } else {
+    setSt('✍️ Мэдлэгт тулгуурлан боловсруулж байна...');
+    prompt = `Та ${scopeLabel} ${catLabel} мэдээг хуулийн мэргэжилтэнд зориулан Монгол хэлээр хүргэдэг сэтгүүлч юм.
+
+${scopeLabel} ${catLabel} сүүлийн үеийн хамгийн чухал 6-8 мэдээг Монгол хэлээр хүргэнэ үү.
+
+Хэвлэх загвар:
+📌 **Гарчиг**
+*Огноо / хугацаа*
+Агуулга 2-3 өгүүлбэрт
+⚖️ Хуулийн ач холбогдол (хамааралтай бол)
+
+---
+Монголтой холбоотой мэдээг тэргүүнд тавина. Огноо мэдэгдэхгүй бол "Сүүлийн үед" гэнэ. Мэдэхгүй зүйлийг хуурамчаар бичихгүй.`;
+  }
+
+  // 3. Claude дуудах
+  try {
+    const d = await callClaude(key, model, prompt, 2500);
+    if (!d || !d.trim()) { showErr('Claude хоосон хариу буцаалаа. API түлхүүрийг шалгаад дахин оролдоно уу.'); setBtnDisabled('nw-btn',false); return; }
+    renderMD('nw-out', d);
+    loading('nw-load','nw-res',false);
+    document.getElementById('nw-res').scrollIntoView({behavior:'smooth'});
+  } catch(e) {
+    showErr('Claude API алдаа: ' + e.message);
+    console.error('doNews Claude error:', e);
+  }
+  setBtnDisabled('nw-btn', false);
+}
+
+function goalRender() {} // placeholder — goals section removed
+
+// ══════════════════════════════════
+// helper: callClaude
+// ══════════════════════════════════
+async function callClaude(key, model, prompt, maxTokens=2048) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model, max_tokens:maxTokens, messages:[{role:'user',content:[{type:'text',text:prompt}]}]})
+  });
+  if (!r.ok) { const e=await r.json().catch(()=>{}); throw new Error(e?.error?.message||'API алдаа '+r.status); }
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d.content[0].text;
+}
+</script>
+</body>
+</html>
