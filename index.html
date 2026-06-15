@@ -2261,71 +2261,68 @@ async function driveLoadReg() {
 // ══════════════════════════════════
 // NEWS
 // ══════════════════════════════════
-async function fetchNewsRSS(cat, scope) {
-  // rss2json.com — CORS proxy шаардахгүй, шууд JSON буцаадаг
-  const RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
+async function fetchNewsFromWeb(scope, cat) {
+  // allorigins.win proxy-аар мэдээний сайтуудаас HTML татаж текст гаргана
+  const PROXY = 'https://api.allorigins.win/raw?url=';
 
-  // Категориор дэлхийн мэдээний feed-үүд
-  const worldFeeds = {
-    all: [
-      'https://feeds.reuters.com/reuters/topNews',
-      'https://feeds.bbci.co.uk/news/world/rss.xml'
-    ],
-    law: [
-      'https://feeds.reuters.com/reuters/legalNews',
-      'https://feeds.bbci.co.uk/news/world/rss.xml'
-    ],
-    politics: [
-      'https://feeds.reuters.com/Reuters/PoliticsNews',
-      'https://feeds.bbci.co.uk/news/world/rss.xml'
-    ],
-    economy: [
-      'https://feeds.reuters.com/reuters/businessNews',
-      'https://feeds.bbci.co.uk/news/business/rss.xml'
-    ],
-    aviation: [
-      'https://feeds.reuters.com/reuters/businessNews',
-      'https://www.aviationweek.com/rss/awn'
-    ],
-    international: [
-      'https://feeds.reuters.com/Reuters/worldNews',
-      'https://feeds.bbci.co.uk/news/world/rss.xml'
-    ]
+  // Сайтын жагсаалт — scope болон cat-д тохируулна
+  const mnSites = [
+    { name: 'Montsame', url: 'https://montsame.mn' },
+    { name: 'News.mn',  url: 'https://www.news.mn' },
+    { name: 'Gogo.mn',  url: 'https://www.gogo.mn' }
+  ];
+  const worldSites = {
+    all:           [{ name: 'BBC World',    url: 'https://www.bbc.com/news/world' },
+                    { name: 'Al Jazeera',   url: 'https://www.aljazeera.com' }],
+    law:           [{ name: 'Reuters Law',  url: 'https://www.reuters.com/legal/' },
+                    { name: 'BBC World',    url: 'https://www.bbc.com/news/world' }],
+    politics:      [{ name: 'BBC Politics', url: 'https://www.bbc.com/news/politics' },
+                    { name: 'Al Jazeera',   url: 'https://www.aljazeera.com/news/political-news' }],
+    economy:       [{ name: 'BBC Business', url: 'https://www.bbc.com/news/business' },
+                    { name: 'Reuters Biz',  url: 'https://www.reuters.com/business/' }],
+    aviation:      [{ name: 'Reuters',      url: 'https://www.reuters.com/business/aerospace-defense/' },
+                    { name: 'BBC World',    url: 'https://www.bbc.com/news/world' }],
+    international: [{ name: 'Al Jazeera',  url: 'https://www.aljazeera.com/news/' },
+                    { name: 'BBC World',    url: 'https://www.bbc.com/news/world' }]
   };
 
-  // Монгол мэдээний feed-үүд
-  const mnFeeds = [
-    'https://montsame.mn/rss',
-    'https://www.gogo.mn/rss.php',
-    'https://news.mn/rss/'
-  ];
+  const sitesToFetch = [];
+  if (scope === 'mn' || scope === 'both') sitesToFetch.push(...mnSites.slice(0, 2));
+  if (scope === 'world' || scope === 'both') sitesToFetch.push(...(worldSites[cat] || worldSites.all).slice(0, 2));
 
-  const feedsToTry = [];
-  if (scope === 'mn' || scope === 'both') feedsToTry.push(...mnFeeds);
-  if (scope === 'world' || scope === 'both') feedsToTry.push(...(worldFeeds[cat] || worldFeeds.all));
-
-  const items = [];
-  for (const feedUrl of feedsToTry.slice(0, 4)) {
+  const results = [];
+  for (const site of sitesToFetch.slice(0, 3)) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(RSS2JSON + encodeURIComponent(feedUrl), {signal: controller.signal});
+      const timer = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(PROXY + encodeURIComponent(site.url), {signal: controller.signal});
       clearTimeout(timer);
       if (!res.ok) continue;
-      const data = await res.json();
-      if (data.status !== 'ok' || !data.items?.length) continue;
-      data.items.slice(0, 8).forEach(it => {
-        const title = (it.title||'').replace(/<[^>]*>/g,'').trim();
-        const desc  = (it.description||it.content||'').replace(/<[^>]*>/g,'').trim().slice(0,200);
-        const pub   = it.pubDate ? new Date(it.pubDate).toLocaleDateString('mn-MN') : '';
-        const src   = it.author || data.feed?.title || '';
-        const link  = it.link || '';
-        if (title) items.push({title, desc, pub, src, link});
-      });
-      if (items.length >= 10) break;
-    } catch(e) { console.warn('RSS feed failed:', feedUrl, e.message); }
+      const html = await res.text();
+      if (html.length < 500) continue;
+
+      // HTML-г цэвэрлэж текст гаргана
+      const text = html
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+        .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+        .replace(/<header[\s\S]*?<\/header>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&[a-z]+;/gi, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+        .slice(0, 6000);  // 6000 тэмдэгт хүртэл
+
+      if (text.length > 200) {
+        results.push({ name: site.name, url: site.url, text });
+        console.log(`✅ Fetched ${site.name}: ${text.length} chars`);
+      }
+    } catch(e) {
+      console.warn(`❌ Failed ${site.name}:`, e.message);
+    }
   }
-  return items.slice(0, 15);
+  return results;
 }
 
 async function doNews() {
@@ -2353,53 +2350,57 @@ async function doNews() {
     document.getElementById('nw-res').classList.remove('hidden');
   }
 
-  // 1. RSS татах — 15с дотор, timeout-д хэтэрвэл хоосон array буцаана
-  setSt('📡 Google News-ээс мэдээ хайж байна...');
-  let newsItems = [];
+  // 1. Мэдээний сайтуудаас HTML татна
+  setSt('📡 Мэдээний сайтуудаас мэдээ хайж байна...');
+  let webContents = [];
   try {
     const raceResult = await Promise.race([
-      fetchNewsRSS(cat, scope),
-      new Promise(resolve => setTimeout(() => resolve([]), 15000))
+      fetchNewsFromWeb(scope, cat),
+      new Promise(resolve => setTimeout(() => resolve([]), 20000))
     ]);
-    newsItems = raceResult || [];
+    webContents = raceResult || [];
   } catch(e) {
-    newsItems = [];
-    console.warn('RSS fetch error:', e.message);
+    webContents = [];
+    console.warn('Web fetch error:', e.message);
   }
 
-  // 2. RSS амжилтгүй бол тодорхой алдааны мессеж — хуучин мэдээ гаргахгүй
-  if (newsItems.length === 0) {
-    showErr(`📡 Мэдээний сервертэй холбогдож чадсангүй.<br><br>
-<b>Шалтгаан:</b> Reuters / BBC / Montsame мэдээний feed-үүд хариу өгсөнгүй (15 секунд хүлээлээ).<br><br>
+  // 2. Сайт татаж чадаагүй бол — шууд линк харуулна
+  if (webContents.length === 0) {
+    showErr(`📡 Мэдээний сайтуудтай холбогдож чадсангүй.<br><br>
+<b>Шалтгаан:</b> BBC / Al Jazeera / Montsame / News.mn сайтуудаас хариу ирсэнгүй (20 секунд хүлээлээ).<br><br>
 <b>Шийдэл:</b><br>
 • Интернэт холболтоо шалгана уу<br>
 • Хэсэг хугацааны дараа дахин оролдоно уу<br>
-• Эсвэл мэдээг шууд <a href="https://montsame.mn" target="_blank" style="color:#60a5fa">Montsame</a> ·
-<a href="https://reuters.com" target="_blank" style="color:#60a5fa">Reuters</a> ·
-<a href="https://bbc.com/news" target="_blank" style="color:#60a5fa">BBC</a>-ээс үзнэ үү<br><br>
+• Мэдээг шууд үзнэ үү: <a href="https://montsame.mn" target="_blank" style="color:#60a5fa">Montsame</a> ·
+<a href="https://www.news.mn" target="_blank" style="color:#60a5fa">News.mn</a> ·
+<a href="https://www.bbc.com/news/world" target="_blank" style="color:#60a5fa">BBC</a> ·
+<a href="https://www.aljazeera.com" target="_blank" style="color:#60a5fa">Al Jazeera</a><br><br>
 <i style="color:#94a3b8">⚠️ AI-ийн мэдлэгт тулгуурлан мэдээ гаргахгүй — тухайн мэдлэг 2025 оноор хязгаарлагдах тул буруу мэдээлэл гарч болзошгүй.</i>`);
     setBtnDisabled('nw-btn', false);
     return;
   }
 
-  // 3. RSS амжилттай — Claude-аар боловсруулна
-  setSt(`✍️ ${newsItems.length} мэдээ татагдлаа, боловсруулж байна...`);
-  const headlineBlock = newsItems.map((it,i) =>
-    `${i+1}. ${it.title}${it.pub ? ' ['+it.pub+']' : ''}${it.src ? ' ('+it.src+')' : ''}${it.link ? '\n   URL: '+it.link : ''}`
-  ).join('\n');
-  const prompt = `Та ${scopeLabel} ${catLabel} мэдээг хуулийн мэргэжилтэнд зориулан Монгол хэлээр хүргэдэг сэтгүүлч юм.
+  // 3. Сайтуудын контентыг Claude-аар боловсруулна
+  const fetchedSites = webContents.map(s => s.name).join(', ');
+  setSt(`✍️ ${fetchedSites}-аас мэдээ татагдлаа, боловсруулж байна...`);
+  const contentBlock = webContents.map(s =>
+    `=== ${s.name} (${s.url}) ===\n${s.text}`
+  ).join('\n\n');
+  const today = new Date().toLocaleDateString('mn-MN', {year:'numeric', month:'long', day:'numeric'});
+  const prompt = `Та ${scopeLabel} ${catLabel} мэдээг хуулийн мэргэжилтэнд зориулан Монгол хэлээр хүргэдэг сэтгүүлч юм. Өнөөдөр: ${today}.
 
-Доорх жинхэнэ мэдээний гарчгуудад тулгуурлан дэлгэрэнгүй тайлан бэлдэнэ үү:
-${headlineBlock}
+Доорх мэдээний сайтуудаас шууд татсан агуулгаас ӨНӨӨДРИЙН хамгийн чухал 6-8 мэдээг ялган гарга:
+
+${contentBlock}
 
 Хэвлэх загвар — мэдээ бүрт:
-📌 **[Гарчиг Монголоор](URL)** ← URL байвал Markdown линк болгоно
+📌 **Гарчиг Монголоор**
 *Эх сурвалж · Огноо*
 Агуулга 2-3 өгүүлбэрт (юу болсон, яагаад чухал)
 ⚖️ Хуулийн ач холбогдол (хамааралтай тохиолдолд л)
 
 ---
-Зөвхөн жагсаалтад байгаа мэдээг тайлбарлана. Хуурамч мэдээ, хуурамч линк нэмэхгүй. Мэдээний гарчгийг Монгол хэлэнд орчуулж болно.`;
+ЧУХАЛ: Зөвхөн дээрх агуулгад байгаа мэдээг гарга. Агуулгад байхгүй зүйл, хуурамч мэдээ бичихгүй. ${catLabel} мэдээг тэргүүнд тавина.`;
 
   try {
     const d = await callClaude(key, model, prompt, 2500);
