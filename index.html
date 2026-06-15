@@ -2262,52 +2262,68 @@ async function driveLoadReg() {
 // NEWS
 // ══════════════════════════════════
 async function fetchNewsRSS(cat, scope) {
-  const PROXIES = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?url='
-  ];
-  const mnQueries = {
-    all:'монгол+улс', law:'монгол+хууль+шүүх',
-    politics:'монгол+улс+төр+засгийн+газар',
-    economy:'монгол+эдийн+засаг', aviation:'МИАТ+нисэх+онгоц',
-    international:'монгол+гадаад+харилцаа'
-  };
-  const worldQueries = {
-    all:'world politics law economy', law:'court verdict law ruling',
-    politics:'politics government parliament', economy:'economy finance markets',
-    aviation:'aviation airline flight ICAO', international:'international diplomacy UN treaty'
+  // rss2json.com — CORS proxy шаардахгүй, шууд JSON буцаадаг
+  const RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+  // Категориор дэлхийн мэдээний feed-үүд
+  const worldFeeds = {
+    all: [
+      'https://feeds.reuters.com/reuters/topNews',
+      'https://feeds.bbci.co.uk/news/world/rss.xml'
+    ],
+    law: [
+      'https://feeds.reuters.com/reuters/legalNews',
+      'https://feeds.bbci.co.uk/news/world/rss.xml'
+    ],
+    politics: [
+      'https://feeds.reuters.com/Reuters/PoliticsNews',
+      'https://feeds.bbci.co.uk/news/world/rss.xml'
+    ],
+    economy: [
+      'https://feeds.reuters.com/reuters/businessNews',
+      'https://feeds.bbci.co.uk/news/business/rss.xml'
+    ],
+    aviation: [
+      'https://feeds.reuters.com/reuters/businessNews',
+      'https://www.aviationweek.com/rss/awn'
+    ],
+    international: [
+      'https://feeds.reuters.com/Reuters/worldNews',
+      'https://feeds.bbci.co.uk/news/world/rss.xml'
+    ]
   };
 
-  const feeds = [];
-  if (scope==='mn'||scope==='both') feeds.push(`https://news.google.com/rss/search?q=${encodeURIComponent(mnQueries[cat]||'монгол')}&hl=mn&gl=MN&ceid=MN:mn`);
-  if (scope==='world'||scope==='both') feeds.push(`https://news.google.com/rss/search?q=${encodeURIComponent(worldQueries[cat]||'world news')}&hl=en&gl=US&ceid=US:en`);
+  // Монгол мэдээний feed-үүд
+  const mnFeeds = [
+    'https://montsame.mn/rss',
+    'https://www.gogo.mn/rss.php',
+    'https://news.mn/rss/'
+  ];
+
+  const feedsToTry = [];
+  if (scope === 'mn' || scope === 'both') feedsToTry.push(...mnFeeds);
+  if (scope === 'world' || scope === 'both') feedsToTry.push(...(worldFeeds[cat] || worldFeeds.all));
 
   const items = [];
-  for (const feedUrl of feeds) {
-    let fetched = false;
-    for (const proxy of PROXIES) {
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(()=>controller.abort(), 8000);
-        const res = await fetch(proxy + encodeURIComponent(feedUrl), {signal: controller.signal});
-        clearTimeout(timer);
-        if (!res.ok) continue;
-        const text = await res.text();
-        const doc = new DOMParser().parseFromString(text, 'text/xml');
-        const rssItems = doc.querySelectorAll('item');
-        if (!rssItems.length) continue;
-        rssItems.forEach(item => {
-          const title = item.querySelector('title')?.textContent?.replace(/<[^>]*>/g,'').trim()||'';
-          const desc  = item.querySelector('description')?.textContent?.replace(/<[^>]*>/g,'').trim().slice(0,180)||'';
-          const pub   = item.querySelector('pubDate')?.textContent?.trim()||'';
-          const src   = item.querySelector('source')?.textContent?.trim()||'';
-          let link = item.querySelector('link')?.textContent?.trim()||item.querySelector('guid')?.textContent?.trim()||'';
-          if(title) items.push({title,desc,pub,src,link});
-        });
-        fetched = true; break;
-      } catch(e) { console.warn('RSS proxy failed:', proxy, e.message); }
-    }
-    if (!fetched) console.warn('All proxies failed for', feedUrl);
+  for (const feedUrl of feedsToTry.slice(0, 4)) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(RSS2JSON + encodeURIComponent(feedUrl), {signal: controller.signal});
+      clearTimeout(timer);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.status !== 'ok' || !data.items?.length) continue;
+      data.items.slice(0, 8).forEach(it => {
+        const title = (it.title||'').replace(/<[^>]*>/g,'').trim();
+        const desc  = (it.description||it.content||'').replace(/<[^>]*>/g,'').trim().slice(0,200);
+        const pub   = it.pubDate ? new Date(it.pubDate).toLocaleDateString('mn-MN') : '';
+        const src   = it.author || data.feed?.title || '';
+        const link  = it.link || '';
+        if (title) items.push({title, desc, pub, src, link});
+      });
+      if (items.length >= 10) break;
+    } catch(e) { console.warn('RSS feed failed:', feedUrl, e.message); }
   }
   return items.slice(0, 15);
 }
@@ -2351,16 +2367,29 @@ async function doNews() {
     console.warn('RSS fetch error:', e.message);
   }
 
-  // 2. Prompt бэлдэх — RSS байвал жинхэнэ мэдээгээр, байхгүй бол Claude мэдлэгт тулгуурлана
-  let prompt;
-  if (newsItems.length > 0) {
-    setSt(`✍️ ${newsItems.length} мэдээ татагдлаа, боловсруулж байна...`);
-    const headlineBlock = newsItems.map((it,i) =>
-      `${i+1}. ${it.title}${it.pub ? ' ['+it.pub+']' : ''}${it.src ? ' ('+it.src+')' : ''}${it.link ? '\n   URL: '+it.link : ''}`
-    ).join('\n');
-    prompt = `Та ${scopeLabel} ${catLabel} мэдээг хуулийн мэргэжилтэнд зориулан Монгол хэлээр хүргэдэг сэтгүүлч юм.
+  // 2. RSS амжилтгүй бол тодорхой алдааны мессеж — хуучин мэдээ гаргахгүй
+  if (newsItems.length === 0) {
+    showErr(`📡 Мэдээний сервертэй холбогдож чадсангүй.<br><br>
+<b>Шалтгаан:</b> Reuters / BBC / Montsame мэдээний feed-үүд хариу өгсөнгүй (15 секунд хүлээлээ).<br><br>
+<b>Шийдэл:</b><br>
+• Интернэт холболтоо шалгана уу<br>
+• Хэсэг хугацааны дараа дахин оролдоно уу<br>
+• Эсвэл мэдээг шууд <a href="https://montsame.mn" target="_blank" style="color:#60a5fa">Montsame</a> ·
+<a href="https://reuters.com" target="_blank" style="color:#60a5fa">Reuters</a> ·
+<a href="https://bbc.com/news" target="_blank" style="color:#60a5fa">BBC</a>-ээс үзнэ үү<br><br>
+<i style="color:#94a3b8">⚠️ AI-ийн мэдлэгт тулгуурлан мэдээ гаргахгүй — тухайн мэдлэг 2025 оноор хязгаарлагдах тул буруу мэдээлэл гарч болзошгүй.</i>`);
+    setBtnDisabled('nw-btn', false);
+    return;
+  }
 
-Доорх Google News-ийн жинхэнэ мэдээний гарчгуудад тулгуурлан дэлгэрэнгүй тайлан бэлдэнэ үү:
+  // 3. RSS амжилттай — Claude-аар боловсруулна
+  setSt(`✍️ ${newsItems.length} мэдээ татагдлаа, боловсруулж байна...`);
+  const headlineBlock = newsItems.map((it,i) =>
+    `${i+1}. ${it.title}${it.pub ? ' ['+it.pub+']' : ''}${it.src ? ' ('+it.src+')' : ''}${it.link ? '\n   URL: '+it.link : ''}`
+  ).join('\n');
+  const prompt = `Та ${scopeLabel} ${catLabel} мэдээг хуулийн мэргэжилтэнд зориулан Монгол хэлээр хүргэдэг сэтгүүлч юм.
+
+Доорх жинхэнэ мэдээний гарчгуудад тулгуурлан дэлгэрэнгүй тайлан бэлдэнэ үү:
 ${headlineBlock}
 
 Хэвлэх загвар — мэдээ бүрт:
@@ -2371,23 +2400,7 @@ ${headlineBlock}
 
 ---
 Зөвхөн жагсаалтад байгаа мэдээг тайлбарлана. Хуурамч мэдээ, хуурамч линк нэмэхгүй. Мэдээний гарчгийг Монгол хэлэнд орчуулж болно.`;
-  } else {
-    setSt('✍️ Мэдлэгт тулгуурлан боловсруулж байна...');
-    prompt = `Та ${scopeLabel} ${catLabel} мэдээг хуулийн мэргэжилтэнд зориулан Монгол хэлээр хүргэдэг сэтгүүлч юм.
 
-${scopeLabel} ${catLabel} сүүлийн үеийн хамгийн чухал 6-8 мэдээг Монгол хэлээр хүргэнэ үү.
-
-Хэвлэх загвар:
-📌 **Гарчиг**
-*Огноо / хугацаа*
-Агуулга 2-3 өгүүлбэрт
-⚖️ Хуулийн ач холбогдол (хамааралтай бол)
-
----
-Монголтой холбоотой мэдээг тэргүүнд тавина. Огноо мэдэгдэхгүй бол "Сүүлийн үед" гэнэ. Мэдэхгүй зүйлийг хуурамчаар бичихгүй.`;
-  }
-
-  // 3. Claude дуудах
   try {
     const d = await callClaude(key, model, prompt, 2500);
     if (!d || !d.trim()) { showErr('Claude хоосон хариу буцаалаа. API түлхүүрийг шалгаад дахин оролдоно уу.'); setBtnDisabled('nw-btn',false); return; }
