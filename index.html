@@ -399,6 +399,7 @@ select:focus,input.inp:focus{outline:none;border-color:#2563eb}
       <div class="linfo">💡 Хуулийн заалтыг <strong>legalinfo.mn</strong>-ээс, шийдвэрийн дугаарыг <strong>shuukh.mn</strong>-ээс нягтлаарай.</div>
       <button class="btn-o" onclick="dlDoc('kb-out','хэргийн_товьёог')">⬇️ Word татах</button>
       <button class="btn-o" onclick="dlTxt('kb-out','хэргийн_товьёог')">⬇️ .txt татах</button>
+      <button class="btn-o" style="background:#1e3a5f;border-color:#3b82f6;color:#93c5fd" onclick="improveBrief()">🔧 Дутуу байвал сайжруулах</button>
     </div>
   </div>
 
@@ -406,14 +407,27 @@ select:focus,input.inp:focus{outline:none;border-color:#2563eb}
   <div class="pane hidden" id="k-hearing">
     <div class="card">
       <div class="ct">🏛️ Шүүх хуралдааны мэдээлэл</div>
+      <div class="frow" style="margin-bottom:10px">
+        <div style="flex:1.2">
+          <label class="lbl" style="font-weight:700;color:#f87171">⚖️ Та аль талаас ажиллаж байна?</label>
+          <select id="kh-side" style="width:100%;padding:8px 10px;border-radius:7px;background:#1e293b;color:#e2e8f0;border:1.5px solid #f87171;font-size:0.95em">
+            <option value="plaintiff">🔴 Нэхэмжлэгчийн өмгөөлөгч — нэхэмжлэлийг ХАНГУУЛНА</option>
+            <option value="defendant">🛡️ Хариуцагчийн өмгөөлөгч — нэхэмжлэлийг НЯЦААNA</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label class="lbl">Үйлчлүүлэгчийн нэр</label>
+          <input class="inp" id="kh-client" placeholder="Манай тал — Аэромонголиа ХХК..."/>
+        </div>
+      </div>
       <div class="frow">
         <div><label class="lbl">Хуралдааны огноо</label>
           <input class="inp" type="date" id="kh-dt"/></div>
         <div><label class="lbl">Шүүгч</label>
           <input class="inp" id="kh-jd" placeholder="Шүүгчийн нэр..."/></div>
       </div>
-      <label class="lbl">Таны байр суурь / хамгаалах чиглэл</label>
-      <textarea class="short" id="kh-pos" placeholder="Жишээ: Нэхэмжлэлийг бүрэн хангуулах. Гол баримт: 2016.01.15-ны №1/443 бичиг, 2019 оны хөрөнгө хүлээлцэх акт. Хариуцагчаас 3,054 м² дотор 168.64 м² багтаж байсан эсэхийг нотлуулах..."></textarea>
+      <label class="lbl">Нэмэлт чиглэл / онцлох баримт</label>
+      <textarea class="short" id="kh-pos" placeholder="Жишээ: 2016.01.15-ны №1/443 бичгийг гол баримт болгох. Хариуцагчаас нууц мэдээлэл задруулсан огноог нотлуулах..."></textarea>
     </div>
     <div class="card">
       <div class="ct">📄 Хэргийн материал</div>
@@ -452,6 +466,7 @@ select:focus,input.inp:focus{outline:none;border-color:#2563eb}
       <div class="linfo">💡 Хуулийн заалтыг <strong>legalinfo.mn</strong>-ээс нягтлаарай.</div>
       <button class="btn-o" onclick="dlDoc('kh-out','шүүх_бэлтгэл')">⬇️ Word татах</button>
       <button class="btn-o" onclick="dlTxt('kh-out','шүүх_бэлтгэл')">⬇️ .txt татах</button>
+      <button class="btn-o" style="background:#1e3a5f;border-color:#3b82f6;color:#93c5fd" onclick="improveHearing()">🔧 Дутуу байвал сайжруулах</button>
     </div>
   </div>
 
@@ -1548,7 +1563,11 @@ async function doBrief() {
 3. **Хавтас / Хуудас** — хэддүгээр хавтаст, хэдэн дэх хуудас. ГАРААР бичсэн дугаарыг "(г)" тэмдэглэ. Жишээ: "Хавтас 1 / х.15(г)"
 4. **Агуулга** — юуг баталгаажуулж байгааг 1-2 өгүүлбэрт товчилно
 
-ЗӨВХӨН хүснэгт — нэмэлт тайлбар, гарчиг нэмэхгүй.`;
+ЧУХАЛ ЗААВРУУД:
+- Материалд дурдагдсан БҮХИЙ Л баримт бичгийг хүснэгтэд оруулна — ганч ч алдахгүй.
+- Материал дуусахаас өмнө зогсохгүй — эцсийн хуудас хүртэл уншина.
+- Хэрэв баримт их байвал хүснэгт урт байж болно — товчлохгүй.
+- ЗӨВХӨН хүснэгт — нэмэлт тайлбар, гарчиг нэмэхгүй.`;
 
   const prompt = isCont && prevWork
     ? `Та хэргийн баримт бичгүүдийн жагсаалтыг үргэлжлүүлж боловсруулна уу.
@@ -1641,17 +1660,33 @@ ${docs.slice(0,4000)}
 async function doHearing() {
   const docs = document.getElementById('kh-docs').value.trim();
   if (!docs) { alert('Файл оруулах эсвэл текст paste хийнэ үү'); return; }
-  const model = document.getElementById('kh-m').value;
-  const dt    = document.getElementById('kh-dt').value;
-  const jd    = document.getElementById('kh-jd').value;
-  const pos   = document.getElementById('kh-pos').value;
+  const model  = document.getElementById('kh-m').value;
+  const dt     = document.getElementById('kh-dt').value;
+  const jd     = document.getElementById('kh-jd').value;
+  const pos    = document.getElementById('kh-pos').value;
+  const side   = document.getElementById('kh-side').value;
+  const client = document.getElementById('kh-client').value.trim();
   const isCont = document.getElementById('kh-cont').checked;
   const prevWork = isCont ? document.getElementById('kh-prev').value.trim() : '';
 
   const today_mn = new Date().toLocaleDateString('mn-MN');
 
-  const baseInstructions = `ЧУХАЛ ЗААВРУУД:
+  // Талын тодорхой тайлбар — AI хэзээ ч эргэлзэхгүй
+  const sideContext = side === 'plaintiff'
+    ? `ТАЛ: НЭХЭМЖЛЭГЧИЙН ӨМГӨӨЛӨГЧ
+Үйлчлүүлэгч: ${client||'Нэхэмжлэгч тал'}
+ЗОРИЛГО: Нэхэмжлэлийн шаардлагыг БҮРЭН ХАНГУУЛАХ. Нэхэмжлэгчийн байр суурийг хамгийн хүчтэйгээр илэрхийлж, нотлох баримтыг нэхэмжлэгчийн талд тайлбарлана.
+АНХААРУУЛГА: Хариуцагчийн талаас ямар нэгэн материал боловсруулахгүй. ЗӨВХӨН нэхэмжлэгчийн стратеги.`
+    : `ТАЛ: ХАРИУЦАГЧИЙН ӨМГӨӨЛӨГЧ
+Үйлчлүүлэгч: ${client||'Хариуцагч тал'}
+ЗОРИЛГО: Нэхэмжлэлийг БҮРЭН НЯЦААХ эсвэл нэхэмжлэлийн дүнг эрс бууруулах. Хариуцагчийн эрхийг хамгаалж, нэхэмжлэгчийн нотлох баримтын сул талуудыг илрүүлнэ.
+АНХААРУУЛГА: Нэхэмжлэгчийн талаас ямар нэгэн материал боловсруулахгүй. ЗӨВХӨН хариуцагчийн хамгаалалтын стратеги.`;
+
+  const baseInstructions = `${sideContext}
+
+ЧУХАЛ ЗААВРУУД:
 - Материалд байгаа бүх мэдээллийг ДЭЛГЭРЭНГҮЙ гарган ав. Мэдэгдэхгүй зүйлийг "–" гэж тэмдэглэ.
+- "Аль талд ажиллаж байна тодорхой бус" гэж ОГТХОН бичихгүй — таны тал дээр тодорхой заасан.
 - "Анхаарамж", "Дутлагдлын хүснэгт", "материал хүрэлцэхгүй" зэрэг мессеж ОГТХОН ГАРГАХГҮЙ.
 - Материал нь PDF OCR-оор уншсан байж болно — хуулийн зөв нэр томьёогоор засаж бич.
 - legalinfo.mn-ийн хүчинтэй хуулиудыг яг хуулийн нэр, зүйл, хэсгийн дугаарын хамт дурдана уу.
@@ -2364,6 +2399,37 @@ ${scopeLabel} ${catLabel} сүүлийн үеийн хамгийн чухал 6-
     console.error('doNews Claude error:', e);
   }
   setBtnDisabled('nw-btn', false);
+}
+
+// ── Сайжруулах товчнуудын функцүүд ──
+function improveBrief() {
+  // Одоогийн үр дүнг prev textarea-д хийж, continue горим асаана
+  const out = document.getElementById('kb-out');
+  const prev = document.getElementById('kb-prev');
+  const cont = document.getElementById('kb-cont');
+  const contArea = document.getElementById('kb-cont-area');
+  if (!out || !out.innerText.trim()) { alert('Эхлээд баримтын жагсаалт гаргана уу'); return; }
+  prev.value = out.innerText;
+  cont.checked = true;
+  contArea.classList.remove('hidden');
+  document.getElementById('kb-res').classList.add('hidden');
+  document.getElementById('kb-docs').scrollIntoView({behavior:'smooth'});
+  alert('✅ Өмнөх жагсаалт бэлэн болсон. Нэмэлт материал оруулаад "Баримтын жагсаалт гаргах" дарна уу.');
+}
+
+function improveHearing() {
+  // Одоогийн үр дүнг prev textarea-д хийж, continue горим асаана
+  const out = document.getElementById('kh-out');
+  const prev = document.getElementById('kh-prev');
+  const cont = document.getElementById('kh-cont');
+  const contArea = document.getElementById('kh-cont-area');
+  if (!out || !out.innerText.trim()) { alert('Эхлээд бэлтгэл гаргана уу'); return; }
+  prev.value = out.innerText;
+  cont.checked = true;
+  contArea.classList.remove('hidden');
+  document.getElementById('kh-res').classList.add('hidden');
+  document.getElementById('kh-docs').scrollIntoView({behavior:'smooth'});
+  alert('✅ Өмнөх бэлтгэл хадгалагдлаа. Нэмэлт материал оруулаад "Өмгөөллийн дотоод бэлтгэл хийх" дарна уу.');
 }
 
 function goalRender() {} // placeholder — goals section removed
