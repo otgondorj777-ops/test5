@@ -169,7 +169,6 @@ select:focus,input.inp:focus{outline:none;border-color:#2563eb}
   <button class="nb" onclick="goSec('court',this)">🏛️ Шүүх</button>
   <button class="nb" onclick="goSec('translate',this)">🌐 Орчуулга</button>
   <button class="nb" onclick="goSec('comm',this)">📬 Харилцаа</button>
-  <button class="nb" onclick="goSec('growth',this)">📰 Мэдээ</button>
 </div>
 
 <div class="wrap">
@@ -177,8 +176,7 @@ select:focus,input.inp:focus{outline:none;border-color:#2563eb}
 <!-- ═══════════ SECTION 1: CONTRACTS ═══════════ -->
 <div class="sec active" id="sec-contracts">
   <div class="stabs">
-    <button class="stab active" onclick="goPane('c','review',this)">🔍 Гэрээ хянах</button>
-    <button class="stab" onclick="goPane('c','suggest',this)">✏️ Санал боловсруулах</button>
+    <button class="stab active" onclick="goPane('c','review',this)">🔍 Гэрээ хянах + Засвар</button>
     <button class="stab" onclick="goPane('c','draft',this)">📝 Гэрээний төсөл</button>
   </div>
 
@@ -212,54 +210,45 @@ select:focus,input.inp:focus{outline:none;border-color:#2563eb}
             <option value="claude-sonnet-4-6" selected>Sonnet — нарийн</option>
             <option value="claude-haiku-4-5-20251001">Haiku — хурдан</option></select></div>
       </div>
+      <div class="frow" style="margin-top:4px">
+        <div>
+          <label class="lbl" style="color:#f87171;font-weight:700">⚖️ Аль талын ашгийг хамгаалах</label>
+          <select id="rv-side" style="width:100%;padding:8px 10px;border-radius:7px;background:#1e293b;color:#e2e8f0;border:1.5px solid #f87171;font-size:0.9em">
+            <option value="balanced">⚖️ Тэнцвэртэй — хоёр талд ижил</option>
+            <option value="party1">🔴 Нэхэмжлэгч / Гэрээ санаачлагчийн талд</option>
+            <option value="party2">🛡️ Хариуцагч / Гэрээний нөгөө талд</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Засварын тусгай чиглэл (заавал биш)</label>
+          <input class="inp" id="rv-dir" placeholder="Жишээ: хариуцлагын заалтыг хатуужуулах, торгуулийг нэмэх..."/>
+        </div>
+      </div>
     </div>
-    <button class="btn" id="rv-btn" onclick="doReview()">🔍 Гэрээ хянах</button>
-    <div class="card hidden" id="rv-load"><div class="spin-box"><div class="spinner"></div><p>Гэрээг нарийвчлан хянаж байна...</p><small>legalinfo.mn хуулиудад нийцүүлж байна</small></div></div>
+    <button class="btn" id="rv-btn" onclick="doReviewAndAmend()">🔍 Гэрээ хянах + Засвар боловсруулах</button>
+    <div class="card hidden" id="rv-load">
+      <div class="spin-box"><div class="spinner"></div>
+        <p id="rv-st">Гэрээг нарийвчлан хянаж байна...</p>
+        <small>Хяналт + засварын санал зэрэг боловсруулж байна</small>
+      </div>
+    </div>
     <div class="result-card hidden" id="rv-res">
-      <div class="ct">📊 Хяналтын тайлан</div>
+      <div class="ct">📊 Хяналт + Засварын тайлан</div>
       <div class="md-out" id="rv-out"></div>
       <div class="linfo">💡 Хуулийн иш татлагыг <strong>legalinfo.mn</strong>-ээс нягтлаарай.</div>
-      <button class="btn-o" onclick="dlDoc('rv-out','гэрээ_хяналт')">⬇️ Word татах</button>
-      <button class="btn-o" onclick="dlTxt('rv-out','гэрээ_хяналт')">⬇️ .txt татах</button>
+      <div style="margin-top:14px;padding:12px;background:#0f172a;border-radius:8px;border:1px solid #334155">
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:10px">📥 <strong style="color:#e2e8f0">Татах сонголт</strong></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <button class="btn-o" onclick="dlDoc('rv-out','гэрээ_хяналт_засвар')">⬇️ Тайлан Word татах</button>
+          <button class="btn-o" onclick="dlTxt('rv-out','гэрээ_хяналт_засвар')">⬇️ Тайлан .txt татах</button>
+          <button class="btn-o" style="background:#1e3a5f;border-color:#3b82f6;color:#93c5fd" onclick="dlTrackChanges()">📝 Track Changes Word татах</button>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-top:6px">💡 Track Changes файлыг Word-д нээхэд засварууд улаан/ногоон өнгөөр, зохиогч "Otgondorj.L" нэрээр харагдана.</div>
+      </div>
     </div>
   </div>
 
-  <!-- SUGGEST -->
-  <div class="pane hidden" id="c-suggest">
-    <div class="card">
-      <div class="ct">📄 Засвар оруулах гэрээ</div>
-      <div class="dz" id="sg-z"><div class="dz-icon">📂</div>
-        <p><strong>Дарж сонгох</strong> эсвэл чирэх</p>
-        <input type="file" id="sg-f" accept=".docx,.doc,.txt,.pdf" style="display:none"/></div>
-      <div class="fb hidden" id="sg-b">📄 <span id="sg-fn"></span></div>
-      <div class="or">эсвэл текст paste хийх</div>
-      <textarea id="sg-t" placeholder="Засвар оруулах гэрээний текст..."></textarea>
-    </div>
-    <div class="card">
-      <div class="ct">💡 Засварын чиглэл</div>
-      <textarea class="short" id="sg-dir" placeholder="Засварын чиглэл, онцлог хүсэлтийг бичнэ үү. Жишээ: нэхэмжлэгчийн талд хамгаалах, хариуцлагын заалтыг хүчтэй болгох, торгуулийн хэмжээ нэмэх..."></textarea>
-      <div class="frow" style="margin-top:12px">
-        <div><label class="lbl">Чиглэл</label>
-          <select id="sg-s"><option value="balanced">Тэнцвэртэй</option>
-            <option value="party1">Нэхэмжлэгчийн / Нэг талын талд</option>
-            <option value="party2">Хариуцагчийн / Нөгөө талын талд</option></select></div>
-        <div><label class="lbl">AI загвар</label>
-          <select id="sg-m">
-            <option value="claude-opus-4-8">Opus — хамгийн сайн</option>
-            <option value="claude-sonnet-4-6" selected>Sonnet</option>
-            <option value="claude-haiku-4-5-20251001">Haiku</option></select></div>
-      </div>
-    </div>
-    <button class="btn" id="sg-btn" onclick="doSuggest()">✏️ Засварын санал боловсруулах</button>
-    <div class="card hidden" id="sg-load"><div class="spin-box"><div class="spinner"></div><p>Засварын санал боловсруулж байна...</p></div></div>
-    <div class="result-card hidden" id="sg-res">
-      <div class="ct">✏️ Засварын санал</div>
-      <div class="md-out" id="sg-out"></div>
-      <div class="linfo">💡 Хуулийн иш татлагыг <strong>legalinfo.mn</strong>-ээс нягтлаарай.</div>
-      <button class="btn-o" onclick="dlDoc('sg-out','гэрээ_засвар')">⬇️ Word татах</button>
-      <button class="btn-o" onclick="dlTxt('sg-out','гэрээ_засвар')">⬇️ .txt татах</button>
-    </div>
-  </div>
+  <!-- SUGGEST removed — merged into review -->
 
   <!-- DRAFT -->
   <div class="pane hidden" id="c-draft">
@@ -305,6 +294,13 @@ select:focus,input.inp:focus{outline:none;border-color:#2563eb}
 
 <!-- ═══════════ SECTION 2: CONVERT ═══════════ -->
 <div class="sec hidden" id="sec-convert">
+  <div class="stabs">
+    <button class="stab active" onclick="goPane('cv','main',this)">🔄 Файл → Текст/Word</button>
+    <button class="stab" onclick="goPane('cv','ocr',this)">🔍 OCR зургаас текст</button>
+  </div>
+
+  <!-- MAIN CONVERT -->
+  <div class="pane active" id="cv-main">
   <div class="card">
     <div class="ct">🔄 Файл → Текст / Word хөрвүүлэгч</div>
     <p style="font-size:13px;color:#6b7280;margin-bottom:14px">PDF, PNG, JPG, JPEG зэрэг файлаас текст гарган авч Word формаар татна. Зурган файлд Tesseract OCR эсвэл Claude Vision ашиглана.</p>
@@ -337,6 +333,68 @@ select:focus,input.inp:focus{outline:none;border-color:#2563eb}
     <button class="btn-o" onclick="dlDocRaw('cv-out','хөрвүүлсэн')">⬇️ Word татах</button>
     <button class="btn-o" onclick="dlTxtRaw('cv-out','хөрвүүлсэн')">⬇️ .txt татах</button>
   </div>
+  </div><!-- /cv-main -->
+
+  <!-- OCR TAB -->
+  <div class="pane hidden" id="cv-ocr">
+  <div class="card">
+    <div class="ct">🔍 OCR — Зураг / Скан файлаас текст гаргах</div>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:14px">Гар бичмэл, хэвлэмэл, скан хийсэн баримт бичиг, зургаас Монгол болон Англи текстийг гарган авна. Claude AI Vision хамгийн нарийн — Tesseract дотоод OCR хурдан.</p>
+    <div class="dz" id="ocr-z"><div class="dz-icon">🖼️</div>
+      <p><strong>Зураг эсвэл скан файл оруулах</strong></p>
+      <p style="margin-top:4px;font-size:12px;color:#9ca3af">.png · .jpg · .jpeg · .pdf (скан) · .tiff</p>
+      <input type="file" id="ocr-f" accept=".png,.jpg,.jpeg,.pdf,.tiff,.bmp,.gif" multiple style="display:none"/></div>
+    <div class="fb hidden" id="ocr-b">🖼️ <span id="ocr-fn"></span></div>
+  </div>
+  <div class="card">
+    <div class="ct">⚙️ OCR тохиргоо</div>
+    <div class="frow">
+      <div>
+        <label class="lbl">OCR арга</label>
+        <select id="ocr-engine" style="width:100%;padding:8px 10px;border-radius:7px;font-size:13px">
+          <option value="claude">🤖 Claude AI Vision — хамгийн нарийн (Монгол/Англи/Хятад г.м.)</option>
+          <option value="tesseract-mn">📖 Tesseract Монгол+Англи — хурдан</option>
+          <option value="tesseract-en">📖 Tesseract English only</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl">Гаралтын формат</label>
+        <select id="ocr-fmt">
+          <option value="word">Word (.doc)</option>
+          <option value="txt">Текст (.txt)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <label class="lbl">Нэмэлт зааварчилгаа (заавал биш)</label>
+      <input class="inp" id="ocr-hint" placeholder="Жишээ: гэрчилгээний текст, гар бичмэл байна, тоонуудыг нарийн гарга..."/>
+    </div>
+    <div style="margin-top:10px;padding:9px 12px;background:#f0fdf4;border-radius:6px;border:1px solid #bbf7d0;font-size:12px;color:#166534">
+      💡 <strong>Claude Vision:</strong> Монгол гар бичмэл, тамга, хэвлэмэл баримт — маш нарийн гаргана.<br/>
+      💡 <strong>Tesseract:</strong> API key шаардахгүй, интернэтгүй ажиллана, хурдан.
+    </div>
+  </div>
+  <button class="btn" id="ocr-btn" onclick="doOCR()">🔍 OCR — Текст гаргах</button>
+  <div class="card hidden" id="ocr-load">
+    <div class="spin-box"><div class="spinner"></div>
+      <p id="ocr-st">Зургаас текст гаргаж байна...</p>
+      <small>Хуудас олон байвал удаан үргэлжилж болно</small>
+    </div>
+    <div class="prog-wrap" id="ocr-pg" style="margin:12px 16px">
+      <div class="prog-bar"><div class="prog-fill" id="ocr-pf" style="width:0%"></div></div>
+      <div class="prog-lbl" id="ocr-pl"></div>
+    </div>
+  </div>
+  <div class="result-card hidden" id="ocr-res">
+    <div class="ct">✅ OCR — Гарган авсан текст</div>
+    <div class="extract-box" id="ocr-out" style="min-height:200px"></div>
+    <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px">
+      <button class="btn-o" onclick="dlDocOCR()">⬇️ Word татах</button>
+      <button class="btn-o" onclick="dlTxtOCR()">⬇️ .txt татах</button>
+      <button class="btn-o" onclick="copyOCR()">📋 Хуулж авах</button>
+    </div>
+  </div>
+  </div><!-- /cv-ocr -->
 </div>
 
 <!-- ═══════════ SECTION 3: COURT ═══════════ -->
@@ -657,57 +715,6 @@ select:focus,input.inp:focus{outline:none;border-color:#2563eb}
   </div>
 </div>
 
-<!-- ═══════════ SECTION 6: NEWS ═══════════ -->
-<div class="sec hidden" id="sec-growth">
-  <div class="card">
-    <div class="ct">📰 Өдрийн мэдээ — Хууль, улс төр, эдийн засаг</div>
-    <div class="frow3">
-      <div><label class="lbl">Мэдээний ангилал</label>
-        <select id="nw-cat">
-          <option value="all">🌐 Бүгд (улс төр + хууль + эдийн засаг)</option>
-          <option value="law">⚖️ Хуулийн мэдээ</option>
-          <option value="politics">🏛️ Улс төрийн мэдээ</option>
-          <option value="economy">💹 Эдийн засгийн мэдээ</option>
-          <option value="aviation">✈️ Нисэхийн салбарын мэдээ</option>
-          <option value="international">🌍 Олон улсын мэдээ</option>
-        </select></div>
-      <div><label class="lbl">Хамрах хүрээ</label>
-        <select id="nw-scope">
-          <option value="both">🇲🇳 Монгол + 🌍 Дэлхий</option>
-          <option value="mn">🇲🇳 Монгол улс</option>
-          <option value="world">🌍 Дэлхий</option>
-        </select></div>
-      <div><label class="lbl">AI загвар</label>
-        <select id="nw-m">
-          <option value="claude-opus-4-8">Opus — хамгийн нарийн</option>
-          <option value="claude-sonnet-4-6" selected>Sonnet (зөвлөмж)</option>
-          <option value="claude-haiku-4-5-20251001">Haiku — хурдан</option>
-        </select></div>
-    </div>
-    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 14px;font-size:12px;color:#166534;margin-top:4px">
-      📡 Google News RSS-ээс <strong>жинхэнэ өнөөдрийн мэдээ</strong> татаж, Claude-д дамжуулан Монгол хэлд боловсруулна.
-    </div>
-  </div>
-  <button class="btn" id="nw-btn" onclick="doNews()">📰 Мэдээ авах</button>
-  <div class="card hidden" id="nw-load">
-    <div class="spin-box"><div class="spinner"></div>
-      <p id="nw-st">Өдрийн мэдээ цуглуулж байна...</p>
-      <small>Монгол болон дэлхийн чухал үйл явдлыг тоймлож байна</small>
-    </div>
-  </div>
-  <div class="result-card hidden" id="nw-res">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div class="ct" style="margin:0">📰 Өдрийн мэдээний тойм</div>
-      <div style="font-size:11px;color:#9ca3af" id="nw-date"></div>
-    </div>
-    <div class="md-out" id="nw-out"></div>
-    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn-o" onclick="dlDoc('nw-out','мэдээний_тойм')">⬇️ Word татах</button>
-      <button class="btn-o" onclick="dlTxt('nw-out','мэдээний_тойм')">⬇️ .txt татах</button>
-      <button class="btn-o" onclick="doNews()">🔄 Дахин авах</button>
-    </div>
-  </div>
-</div>
 
 </div><!-- /wrap -->
 
@@ -1208,17 +1215,56 @@ function loading(lid, rid, on) {
 }
 
 // ══════════════════════════════════
-// CONTRACT REVIEW
+// CONTRACT REVIEW + AMEND (нэгтгэсэн)
 // ══════════════════════════════════
-async function doReview() {
+
+// Track changes Word файл татах — rv-out + rv-tc-data-д хадгалагдсан мэдээлэл ашиглана
+function dlTrackChanges() {
+  const tcData = window._rvTrackChanges;
+  if (!tcData) { alert('Эхлээд гэрээ хяналт хийнэ үү'); return; }
+  const authorDate = `Otgondorj.L | ${new Date().toLocaleDateString('mn-MN')}`;
+  const wordHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'>
+<style>
+@page { margin: 2.5cm 2.5cm 2.5cm 2.5cm; }
+body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.9; color: #1a1a2e; }
+h1 { font-size: 15pt; font-weight: bold; text-align: center; margin: 14pt 0 6pt; border-bottom: 2pt solid #1a1a2e; padding-bottom: 4pt; }
+h2 { font-size: 12pt; font-weight: bold; color: #1e3a5f; background: #e8edf5; padding: 4pt 8pt; margin: 14pt 0 5pt; border-left: 4pt solid #1e3a5f; }
+p { margin: 4pt 0 6pt; }
+.track-header { background: #fef9c3; border: 1pt solid #ca8a04; border-radius: 4pt; padding: 8pt 12pt; margin-bottom: 16pt; font-size: 10pt; color: #713f12; }
+ins { color: #15803d; text-decoration: underline; background: #f0fdf4; }
+del { color: #dc2626; text-decoration: line-through; background: #fef2f2; }
+.clause { margin: 10pt 0; padding: 8pt 12pt; border: 1pt solid #e5e7eb; border-radius: 4pt; }
+.clause-num { font-weight: bold; color: #1e3a5f; }
+.reason { font-size: 9.5pt; color: #6b7280; font-style: italic; margin-top: 4pt; }
+</style>
+</head>
+<body>
+<div class="track-header">
+  📝 <strong>Track Changes — Засварын баримт</strong><br/>
+  Засвар хийсэн: <strong>${authorDate}</strong><br/>
+  <span style="font-size:9pt">🟢 Ногоон доогуур зурсан = нэмэлт текст &nbsp;|&nbsp; 🔴 Улаан зурагдсан = устгасан текст</span>
+</div>
+${tcData}
+</body></html>`;
+  dl(new Blob([wordHtml], {type:'application/msword;charset=utf-8'}), 'track_changes_' + today() + '.doc');
+}
+
+async function doReviewAndAmend() {
   const text = document.getElementById('rv-t').value.trim();
   if (!text) { alert('Гэрээний текст оруулна уу'); return; }
   const model = document.getElementById('rv-m').value;
   const ct = document.getElementById('rv-ct').value;
   const j  = document.getElementById('rv-j').value;
+  const side = document.getElementById('rv-side').value;
+  const dir  = document.getElementById('rv-dir').value.trim();
   const jScope = j==='mn' ? 'Монголын хууль (legalinfo.mn)'
     : j==='intl' ? 'Олон улсын стандарт: CISG, UNIDROIT Зарчмууд, ICC'
     : 'Монголын хууль (legalinfo.mn) болон олон улсын стандарт (CISG, UNIDROIT)';
+  const sideLabel = side==='party1' ? 'Нэхэмжлэгч/санаачлагчийн талд хамгаалах чиглэлтэй засвар'
+    : side==='party2' ? 'Хариуцагч/нөгөө талын ашгийг хамгаалах чиглэлтэй засвар'
+    : 'Хоёр талд тэнцвэртэй засвар';
 
   const prompt = `Та Монголын гэрээний хуулийн мэргэжилтэн юм.
 Доорх гэрээг НАРИЙВЧЛАН, ЗАЛАТ БҮР дээр дэлгэрэнгүй хяналтын тайлан бэлтгэнэ үү.${ct!=='auto'?` Гэрээний төрөл: ${ct}.`:''}
@@ -1280,91 +1326,60 @@ ${text.slice(0,14000)}
 |-------------|-------------------|-----------------|
 
 ## ✅ Хүчтэй, сайн заалтууд
-(Зөв боловсруулсан, хуульд нийцсэн, тэлгэрүүлэх хэрэггүй заалтуудыг тэмдэглэнэ)
+(Зөв боловсруулсан, хуульд нийцсэн заалтуудыг тэмдэглэнэ)
 
 ## 📌 Нийт зөвлөмж ба цаашдын алхам
-(Чухлын дарааллаар — юуг эхлэж засах, юуг нэмэх, юуг арилгах)`;
+(Чухлын дарааллаар — юуг эхлэж засах, юуг нэмэх, юуг арилгах)
+
+---
+===TRACK_CHANGES_START===
+# ЗАСВАРЫН БАРИМТ — Track Changes хэлбэр
+## Отгондорж.Л / ${new Date().toLocaleDateString('mn-MN')}
+
+Доорх форматаар гэрээний ЗАСВАРтай хувилбарыг бичнэ үү:
+- Устгах текстийг: <<<DEL>>>устгах текст<<<END>>> хэлбэрт
+- Нэмэх текстийг: <<<INS>>>нэмэх текст<<<END>>> хэлбэрт
+- Өөрчлөлтгүй текстийг тэр хэвээр нь бичнэ
+
+ГЭРЭЭНИЙ ЗАСВАРЫН ХУВИЛБАР (бүрэн гэрээний текстийг заалт бүрээр дарааллан гарга):`;
+
+  // Parse хариулт — 2 хэсэгт хуваана
+  function parseReviewResponse(raw) {
+    const sep = '===TRACK_CHANGES_START===';
+    const idx = raw.indexOf(sep);
+    if (idx === -1) return { review: raw, trackRaw: '' };
+    return {
+      review: raw.slice(0, idx).trim(),
+      trackRaw: raw.slice(idx + sep.length).trim()
+    };
+  }
+
+  // Track changes HTML үүсгэх
+  function buildTrackChangesHtml(trackRaw) {
+    if (!trackRaw) return '';
+    let html = trackRaw
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/&lt;&lt;&lt;DEL&gt;&gt;&gt;([\s\S]*?)&lt;&lt;&lt;END&gt;&gt;&gt;/g,
+        '<del style="color:#dc2626;text-decoration:line-through;background:#fef2f2">$1</del>')
+      .replace(/&lt;&lt;&lt;INS&gt;&gt;&gt;([\s\S]*?)&lt;&lt;&lt;END&gt;&gt;&gt;/g,
+        '<ins style="color:#15803d;text-decoration:underline;background:#f0fdf4">$1</ins>')
+      .replace(/\n/g, '<br>');
+    return `<div style="font-family:Arial,sans-serif;font-size:11pt;line-height:1.9">${html}</div>`;
+  }
 
   setBtnDisabled('rv-btn',true);
   loading('rv-load','rv-res',true);
   document.getElementById('rv-res').classList.add('hidden');
+  document.getElementById('rv-st').textContent = 'Гэрээ хянаж, засварыг боловсруулж байна...';
   try {
-    const r = await claude(model, prompt);
-    renderMD('rv-out', r);
+    const raw = await claude(model, prompt, null, null, 16000);
+    const { review, trackRaw } = parseReviewResponse(raw);
+    renderMD('rv-out', review);
+    window._rvTrackChanges = buildTrackChangesHtml(trackRaw);
     loading('rv-load','rv-res',false);
     document.getElementById('rv-res').scrollIntoView({behavior:'smooth'});
   } catch(e) { alert('Алдаа: '+e.message); document.getElementById('rv-load').classList.add('hidden'); }
   setBtnDisabled('rv-btn',false);
-}
-
-// ══════════════════════════════════
-// CONTRACT SUGGEST
-// ══════════════════════════════════
-async function doSuggest() {
-  const text = document.getElementById('sg-t').value.trim();
-  if (!text) { alert('Гэрээний текст оруулна уу'); return; }
-  const model = document.getElementById('sg-m').value;
-  const side  = document.getElementById('sg-s').value;
-  const dir   = document.getElementById('sg-dir').value;
-  const sideLabel = side==='party1'?'Нэхэмжлэгч/нэг талын ашгийг хамгаалах чиглэлд':
-    side==='party2'?'Хариуцагч/нөгөө талын ашгийг хамгаалах чиглэлд':'Хоёр талд тэнцвэртэй';
-
-  const prompt = `Та Монголын гэрээний хуулийн мэргэжлийн зөвлөх юм.
-${sideLabel} дараах гэрээнд засвар, нэмэлт оруулах санал боловсруулна уу.${dir?`\nОнцлог хүсэлт: ${dir}`:''}
-legalinfo.mn дээрх Монголын хүчинтэй хуулиудад үндэслэнэ үү.
-Хариултыг гэрээний хэлбэрт тохируулна уу.
-
----
-${text.slice(0,12000)}
----
-
-Доорх бүтцээр засварын санал боловсруулна уу:
-
-# ГЭРЭЭНИЙ ЗАСВАРЫН САНАЛ
-
-## Нийт үнэлгээ ба засварын чиглэл
-
-## Заалт тус бүрийн засварын санал
-
-### [Заалтын дугаар/нэр] — [Асуудлын нэр]
-
-**Одоогийн текст:**
-> (гэрээнээс яг тухайн заалтыг хуулж бичнэ)
-
-**Засварын санал:**
-> (шинэ, засагдсан текст — гэрээнд шууд оруулах хэлбэрт бичнэ)
-
-**Засварын шалтгаан:**
-(яагаад засах шаардлагатай, ямар эрсдэлийг арилгаж байгаа)
-
-**Хуулийн үндэслэл:** [legalinfo.mn-ийн хуулийн нэр, зүйл]
-
----
-
-## Нэмэх шаардлагатай шинэ заалтууд
-(одоо байхгүй боловч нэмэхийг зөвлөж буй заалт бүрт бэлэн текст санал болгоно)
-
-### [Нэмэх заалтын нэр]
-**Санал болгосон текст:**
-> (гэрээнд шууд оруулах бэлэн текст)
-
-**Нэмэх шалтгаан:**
-**Хуулийн үндэслэл:**
-
-## Устгах/Хөнгөвчлөх заалтууд
-
-## Эцсийн зөвлөмж`;
-
-  setBtnDisabled('sg-btn',true);
-  loading('sg-load','sg-res',true);
-  document.getElementById('sg-res').classList.add('hidden');
-  try {
-    const r = await claude(model, prompt);
-    renderMD('sg-out', r);
-    loading('sg-load','sg-res',false);
-    document.getElementById('sg-res').scrollIntoView({behavior:'smooth'});
-  } catch(e) { alert('Алдаа: '+e.message); document.getElementById('sg-load').classList.add('hidden'); }
-  setBtnDisabled('sg-btn',false);
 }
 
 // ══════════════════════════════════
@@ -1476,6 +1491,157 @@ async function doConvert() {
   setBtnDisabled('cv-btn',false);
 }
 
+// ══════════════════════════════════════════════════
+// OCR TAB — зургаас / PDF-ээс текст гаргах
+// ══════════════════════════════════════════════════
+let ocrFiles = [];
+
+(function initOCR() {
+  window.addEventListener('DOMContentLoaded', () => {
+    const z = document.getElementById('ocr-z');
+    const fi = document.getElementById('ocr-f');
+    if (!z || !fi) return;
+    z.onclick = () => fi.click();
+    z.ondragover = e => { e.preventDefault(); z.classList.add('drag'); };
+    z.ondragleave = () => z.classList.remove('drag');
+    z.ondrop = e => { e.preventDefault(); z.classList.remove('drag'); setOCRFiles([...e.dataTransfer.files]); };
+    fi.onchange = () => setOCRFiles([...fi.files]);
+  });
+})();
+
+function setOCRFiles(files) {
+  ocrFiles = files;
+  const fn = document.getElementById('ocr-fn');
+  if (fn) fn.textContent = [...files].map(f => f.name).join(', ') + ' (' + files.length + ' файл)';
+  const btn = document.getElementById('ocr-b');
+  if (btn) btn.classList.remove('hidden');
+}
+
+async function doOCR() {
+  if (!ocrFiles || !ocrFiles.length) { alert('Зураг эсвэл PDF файл оруулна уу'); return; }
+  const engine = document.getElementById('ocr-engine').value;
+  const hint   = (document.getElementById('ocr-hint') || {}).value || '';
+  const key    = getKey();
+  if (engine === 'claude' && !key) return;
+
+  setBtnDisabled('ocr-btn', true);
+  document.getElementById('ocr-load').classList.remove('hidden');
+  document.getElementById('ocr-res').classList.add('hidden');
+
+  const ocrSt = msg => { const el = document.getElementById('ocr-st'); if (el) el.textContent = msg; };
+  const ocrPr = (pct, lbl) => {
+    const bar = document.getElementById('ocr-pf');
+    const label = document.getElementById('ocr-pl');
+    if (bar) bar.style.width = pct + '%';
+    if (label) label.textContent = lbl;
+  };
+
+  let allText = '';
+  try {
+    for (let i = 0; i < ocrFiles.length; i++) {
+      const f = ocrFiles[i];
+      ocrSt(`[${i+1}/${ocrFiles.length}] "${f.name}" боловсруулж байна...`);
+      ocrPr(Math.round((i / ocrFiles.length) * 85), `${i+1} / ${ocrFiles.length} файл`);
+
+      let text = '';
+      if (engine === 'claude') {
+        if (f.name.match(/\.pdf$/i)) {
+          // PDF-г хуудас бүрт vision-оор уншина
+          text = await pdfVisionAll(f, ocrSt, 50);
+        } else {
+          // Зураг
+          const b64 = await readImgB64(f);
+          const mime = f.type || 'image/jpeg';
+          const hintPart = hint.trim() ? ` Нэмэлт зааварчилгаа: ${hint.trim()}.` : '';
+          const resp = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': key,
+              'anthropic-version': '2023-06-01',
+              'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 4096,
+              messages: [{
+                role: 'user',
+                content: [
+                  { type: 'image', source: { type: 'base64', media_type: mime, data: b64 } },
+                  { type: 'text', text: `Энэ зургийн бүх текстийг яг эх хэлбэрээр, бүтэц хадгалан гарган ав. Монгол үгийг гажуудуулахгүй яг байгаагаар нь бич.${hintPart} Зөвхөн текст — тайлбар, тэмдэглэл нэмэхгүй.` }
+                ]
+              }]
+            })
+          });
+          const d = await resp.json();
+          if (d.error) throw new Error(d.error.message);
+          text = d.content[0].text;
+        }
+      } else {
+        // Tesseract.js (CDN-ээс ачаалагдсан байх ёстой)
+        if (typeof Tesseract === 'undefined') throw new Error('Tesseract ачаалагдаагүй байна. Хуудсыг F5-аар дахин ачааллана уу.');
+        const lang = engine === 'tesseract-mn' ? 'mon' : 'eng';
+        ocrSt('Tesseract OCR боловсруулж байна...');
+        const result = await Tesseract.recognize(f, lang, {
+          logger: m => {
+            if (m.status === 'recognizing text')
+              ocrPr(Math.round(m.progress * 85), `OCR: ${Math.round(m.progress * 100)}%`);
+          }
+        });
+        text = result.data.text;
+      }
+
+      allText += (ocrFiles.length > 1 ? `\n\n=== ${f.name} ===\n` : '') + text;
+    }
+
+    ocrPr(100, '✅ Дууслаа');
+    const outEl = document.getElementById('ocr-out');
+    if (outEl) outEl.textContent = allText.trim();
+    document.getElementById('ocr-load').classList.add('hidden');
+    document.getElementById('ocr-res').classList.remove('hidden');
+    document.getElementById('ocr-res').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) {
+    alert('OCR алдаа: ' + e.message);
+    document.getElementById('ocr-load').classList.add('hidden');
+  }
+  setBtnDisabled('ocr-btn', false);
+}
+
+function dlDocOCR() {
+  const text = (document.getElementById('ocr-out') || {}).textContent || '';
+  if (!text.trim()) { alert('Гаргах текст байхгүй'); return; }
+  const esc = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const html = `<html><head><meta charset='utf-8'><style>
+body{font-family:"Times New Roman",serif;font-size:12pt;line-height:1.8;margin:2.5cm}
+pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:11pt}
+h2{font-size:13pt;color:#1a1a2e;border-bottom:1pt solid #ccc;padding-bottom:4pt;margin-bottom:16pt}
+</style></head><body>
+<h2>OCR — Гарган авсан текст | ${today()}</h2>
+<pre>${esc}</pre>
+</body></html>`;
+  dl(new Blob([html], { type: 'application/msword;charset=utf-8' }), 'ocr_' + today() + '.doc');
+}
+
+function dlTxtOCR() {
+  const text = (document.getElementById('ocr-out') || {}).textContent || '';
+  if (!text.trim()) { alert('Гаргах текст байхгүй'); return; }
+  dl(new Blob([text], { type: 'text/plain;charset=utf-8' }), 'ocr_' + today() + '.txt');
+}
+
+function copyOCR() {
+  const text = (document.getElementById('ocr-out') || {}).textContent || '';
+  if (!text.trim()) { alert('Хуулах текст байхгүй'); return; }
+  navigator.clipboard.writeText(text)
+    .then(() => alert('✅ Clipboard-д хуулагдлаа'))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      alert('✅ Хуулагдлаа');
+    });
+}
+// ══════════════════════════════════════════════════
+
 async function imgVision(f) {
   const b64=await readImgB64(f), mime=f.type||'image/jpeg', key=getKey();
   if(!key) throw new Error('API key байхгүй');
@@ -1569,42 +1735,105 @@ async function doBrief() {
 - Хэрэв баримт их байвал хүснэгт урт байж болно — товчлохгүй.
 - ЗӨВХӨН хүснэгт — нэмэлт тайлбар, гарчиг нэмэхгүй.`;
 
-  const prompt = isCont && prevWork
-    ? `Та хэргийн баримт бичгүүдийн жагсаалтыг үргэлжлүүлж боловсруулна уу.
+  setBtnDisabled('kb-btn',true);
+  loading('kb-load','kb-res',true);
+  document.getElementById('kb-res').classList.add('hidden');
+
+  try {
+    let finalResult = '';
+
+    if (isCont && prevWork) {
+      // Continue mode — нэгтгэх
+      const prompt = `Та хэргийн баримт бичгүүдийн жагсаалтыг үргэлжлүүлж боловсруулна уу.
 
 ӨМНӨХ ЖАГСААЛТ:
 ---
-${prevWork.slice(0,7000)}
+${prevWork}
 ---
 
 НЭМЭЛТ МАТЕРИАЛ:
 ---
-${docs.slice(0,7000)}
+${docs}
 ---
 
 ЗААВАР: Өмнөх жагсаалтыг үндэс болго. Нэмэлт материалаас өмнөхөд байхгүй шинэ баримт бичгүүдийг нэм. Огноо, хуудас дутуу байвал нарийвчил. Хасах зүйлгүй. Эцсийн нэгдсэн хүснэгтийг гаргана уу.
 
-${tableSpec}`
-    : `Та хэргийн материалыг уншиж, баримт бичгүүдийн жагсаалтыг Markdown хүснэгт хэлбэрээр гаргана уу.
+${tableSpec}`;
+      finalResult = await claude(model, prompt, null, null, 8192);
+    } else {
+      // Chunk processing — материал 12000 тэмдэгтээс их бол хэсэгчилж боловсруулна
+      const CHUNK = 12000;
+      if (docs.length <= CHUNK) {
+        // Нэг дуудалтаар
+        const prompt = `Та хэргийн материалыг уншиж, баримт бичгүүдийн жагсаалтыг Markdown хүснэгт хэлбэрээр гаргана уу.
 
 ХЭРГИЙН МЭДЭЭЛЭЛ:
 Шүүх: ${court||'–'}  |  Хэргийн дугаар: ${caseNo||'–'}
 Нэхэмжлэгч: ${pl||'–'}  |  Хариуцагч: ${df||'–'}
 Нэхэмжлэлийн шаардлага: ${claim||'–'}
 
-ХЭРГИЙН МАТЕРИАЛ:
+ХЭРГИЙН МАТЕРИАЛ (бүрэн):
 ---
-${docs.slice(0,13000)}
+${docs}
 ---
 
 ${tableSpec}`;
+        finalResult = await claude(model, prompt, null, null, 8192);
+      } else {
+        // Олон хэсэгт хуваана
+        const chunks = [];
+        for (let i = 0; i < docs.length; i += CHUNK) chunks.push(docs.slice(i, i + CHUNK));
+        const totalChunks = chunks.length;
+        document.getElementById('kb-load').querySelector('p') &&
+          (document.getElementById('kb-load').querySelector('p').textContent = `Нийт ${totalChunks} хэсэгт хуваан боловсруулж байна...`);
 
-  setBtnDisabled('kb-btn',true);
-  loading('kb-load','kb-res',true);
-  document.getElementById('kb-res').classList.add('hidden');
-  try {
-    const r = await claude(model, prompt, null, null, 8192);
-    renderMD('kb-out', r);
+        let accumResult = '';
+        for (let ci = 0; ci < chunks.length; ci++) {
+          const isFirst = ci === 0;
+          const isLast  = ci === chunks.length - 1;
+
+          const chunkPrompt = isFirst
+            ? `Та хэргийн материалыг уншиж баримт бичгийн жагсаалт гаргана уу. Материал ${totalChunks} хэсэгт хуваагдсан — энэ ${ci+1}-р хэсэг.
+
+ХЭРГИЙН МЭДЭЭЛЭЛ:
+Шүүх: ${court||'–'}  |  Хэргийн дугаар: ${caseNo||'–'}
+Нэхэмжлэгч: ${pl||'–'}  |  Хариуцагч: ${df||'–'}
+Нэхэмжлэлийн шаардлага: ${claim||'–'}
+
+МАТЕРИАЛ (${ci+1}/${totalChunks}):
+---
+${chunks[ci]}
+---
+
+${tableSpec}
+АНХААРАЛ: Энэ ${ci+1}-р хэсэг. Олдсон баримт бүрийг жагсаана — дараагийн хэсэгтэй нэгтгэнэ.`
+            : `Та хэргийн баримт бичгийн жагсаалтыг үргэлжлүүлж нэмнэ үү.
+
+ӨМНӨХ ЖАГСААЛТ:
+---
+${accumResult}
+---
+
+ШИНЭ МАТЕРИАЛ (${ci+1}/${totalChunks}):
+---
+${chunks[ci]}
+---
+
+${isLast ? 'ЭЦСИЙН ХЭСЭГ — нэгдсэн бүрэн хүснэгтийг гаргана уу. Давхцал байвал нэгтгэнэ, ямар ч баримт алдахгүй.' : `Шинэ материалаас баримтуудыг нэм. Өмнөх + шинэ нэгдсэн хүснэгтийг гаргана уу.`}
+
+${tableSpec}`;
+
+          accumResult = await claude(model, chunkPrompt, null, null, 8192);
+          if (!isLast) {
+            const el = document.getElementById('kb-load').querySelector('p');
+            if (el) el.textContent = `${ci+2}/${totalChunks} хэсэг боловсруулж байна...`;
+          }
+        }
+        finalResult = accumResult;
+      }
+    }
+
+    renderMD('kb-out', finalResult);
     loading('kb-load','kb-res',false);
     document.getElementById('kb-res').scrollIntoView({behavior:'smooth'});
   } catch(e) { alert('Алдаа: '+e.message); document.getElementById('kb-load').classList.add('hidden'); }
@@ -1684,112 +1913,153 @@ async function doHearing() {
 
   const baseInstructions = `${sideContext}
 
-ЧУХАЛ ЗААВРУУД:
-- Материалд байгаа бүх мэдээллийг ДЭЛГЭРЭНГҮЙ гарган ав. Мэдэгдэхгүй зүйлийг "–" гэж тэмдэглэ.
-- "Аль талд ажиллаж байна тодорхой бус" гэж ОГТХОН бичихгүй — таны тал дээр тодорхой заасан.
-- "Анхаарамж", "Дутлагдлын хүснэгт", "материал хүрэлцэхгүй" зэрэг мессеж ОГТХОН ГАРГАХГҮЙ.
-- Материал нь PDF OCR-оор уншсан байж болно — хуулийн зөв нэр томьёогоор засаж бич.
-- legalinfo.mn-ийн хүчинтэй хуулиудыг яг хуулийн нэр, зүйл, хэсгийн дугаарын хамт дурдана уу.
-- Бүх хэсэг дүүрэн байх ёстой. Товч бичихгүй — нарийн дэлгэрэнгүй бич.`;
+ЧУХАЛ ЗААВРУУД — ЗААВАЛ ДАГАНА:
+1. Материалд байгаа БҮХИЙ Л мэдээллийг ДЭЛГЭРЭНГҮЙ гарган ав — товчлохгүй. Мэдэгдэхгүй зүйлийг "–" гэж тэмдэглэ, гэхдээ таамаглах боломжтой бол таамаглана уу.
+2. "Аль талд ажиллаж байна тодорхой бус", "материал дутмаг", "хангалтгүй мэдээлэл" гэж ОГТХОН бичихгүй — таны тал тодорхой заасан, дутуу мэдээллийг ч стратегийн байдлаар дүгнэнэ.
+3. "Анхаарал", "Дутлагдлын хүснэгт", "хязгаарлалт" зэрэг мессеж ОГТХОН ГАРГАХГҮЙ.
+4. Материал нь PDF OCR-оор уншсан байж болно — хуулийн зөв нэр томьёогоор засаж, ойлгомжтойгоор бич.
+5. Монгол Улсын хуулийн зохицуулалтыг яг нэр, зүйл, хэсэг, заалтын дугаарын хамт дурдана уу.
+6. Дэлгэрэнгүй байдлын шаардлага: хүснэгт бүр ≥3 мөр, аргумент бүр ≥3 өгүүлбэрийн тайлбартай, асуулт бүр стратегийн зорилготой.
+7. Хуульч, шүүгч, мэргэжлийн хүн унших хэмжээний ГҮНЗГИЙ ШИНЖИЛГЭЭ хийнэ — гадаргуугийн тайлбараар хязгаарлахгүй.
+8. Шүүх дэх практик, цаг хугацааны хязгаарлалт, шүүгчийн хандлагыг харгалзан стратеги боловсруулна уу.`;
 
   const templateSections = `
-## 0. Процессын одоогийн байдал
+## 0. Хэргийн товч тойм ба одоогийн байдал
 
-### 0.1 Тогтоогдсон үйл баримт
-(Материалаас гарган авсан бодит баримт, шийдвэрийн дугаар, огноо бүхий жагсаалт — дор хаяж 5–10 зүйл)
+### 0.1 Хэргийн мөн чанар ба маргааны гол цэг
+(Хэргийг товч танилцуулна — юу болсон, юу маргаж байна, энэ хуралдааны гол зорилго юу болох)
 
-- **[огноо]** — [үйл баримт, баримтын нэр/дугаар]
+### 0.2 Тогтоогдсон үйл баримт — он цагийн дарааллаар
+(Материалаас батлагдсан бодит баримт, огноо, баримтын нэр/дугаарын хамт — БҮХИЙ Л баримтыг оруулна, дор хаяж 8–15 зүйл)
 
-### 0.2 Шийдвэрлэх гол асуудлууд / маргааны цэгүүд
-(Энэ хуралдаанд шийдвэрлэх гол маргааны цэгүүд, эсрэг талын аргументуудыг тодорхой тайлбарлана)
+- **[огноо]** — [үйл баримт, баримтын нэр/дугаар, байршил]
+
+### 0.3 Маргааны гол цэгүүд ба энэ хуралдаанд шийдвэрлэх асуудлууд
+(Тал бүрийн байр суурийг харьцуулан гаргана — бидний байр суурь vs эсрэг талын байр суурь)
+
+| Маргааны цэг | Бидний байр суурь | Эсрэг талын байр суурь | Шийдвэрлэх арга |
+|--------------|------------------|----------------------|----------------|
 
 ---
 
-## 1. Хэргийн он цагийн дараалал
+## 1. Хэргийн он цагийн дараалал (Timeline)
 
-| Огноо | Үйл явдал | Баримт / Байршил |
-|-------|-----------|-----------------|
+| Огноо | Үйл явдал | Эрх зүйн ач холбогдол | Баримт / Байршил |
+|-------|-----------|----------------------|-----------------|
 
 ---
 
-## 2. Гол аргументууд (шүүх дэх байр суурь)
+## 2. Гол аргументууд — Шүүх дэх байр суурь
 
-### 2.1 Бидний үндсэн аргументууд
-(Шүүх дэх нотлолтын гол аргументуудыг дарааллаар жагсаана — хүчтэйгээс сул руу)
+### 2.1 Бидний үндсэн аргументууд (хүчтэйгээс сул руу)
 
 1. **[Аргументын гарчиг]**
-   - Нотлох баримт: [баримтын нэр, дугаар]
-   - Хуулийн үндэслэл: [хуулийн нэр, зүйл]
-   - Тайлбар: [яагаад энэ аргумент чухал болох]
+   - **Нотлох баримт:** [баримтын нэр, дугаар, хуудас]
+   - **Хуулийн үндэслэл:** [хуулийн нэр, зүйл, хэсэг, заалт]
+   - **Хуралдаанд хэрхэн дэвшүүлэх:** [дэлгэрэнгүй тайлбар — яагаад хүчтэй аргумент болох, шүүхийг хэрхэн итгүүлэх]
+   - **Эсрэг талын болзошгүй хариу:** [тэд юу хэлж магадгүй]
+   - **Бидний хариу эсэргүүцэлд:** [хэрхэн няцаах]
 
 2. **[Аргументын гарчиг]**
-   - Нотлох баримт:
-   - Хуулийн үндэслэл:
-   - Тайлбар:
+   - **Нотлох баримт:**
+   - **Хуулийн үндэслэл:**
+   - **Хуралдаанд хэрхэн дэвшүүлэх:**
+   - **Эсрэг талын болзошгүй хариу:**
+   - **Бидний хариу эсэргүүцэлд:**
 
-### 2.2 Хамгаалах байр суурийн дараалал (шүүх дэх ярианы чиглэл)
-(Хэрхэн эхлэх, ямар дарааллаар аргумент дэвшүүлэх, хамгийн хүчтэй нотлох баримтыг хэзээ гаргах)
+3. **[Аргументын гарчиг]**
+   - **Нотлох баримт:**
+   - **Хуулийн үндэслэл:**
+   - **Хуралдаанд хэрхэн дэвшүүлэх:**
+   - **Эсрэг талын болзошгүй хариу:**
+   - **Бидний хариу эсэргүүцэлд:**
 
----
-
-## 3. Хуулийн шинжилгээ
-
-### 3.1 Хуулийн үндэслэл
-
-| Хуулийн нэр (legalinfo.mn) | Зүйл, хэсэг | Хэрэгт хэрхэн хамаарах |
-|---------------------------|-------------|------------------------|
-
-### 3.2 Дээд шатны шүүхийн шийдвэр / Хэвшмэл практик
-(Материалд дурдагдсан буюу энэ маргааны төрөлтэй холбоотой Монгол улсын дээд шүүх / давж заалдах шатны шүүхийн шийдвэрийг дурдана. Шийдвэр дугаар, он, гол утга товч.)
-
-| Шийдвэрийн дугаар / Он | Шийдвэрийн гол утга | Бидний хэрэгт хэрхэн ашиглах |
-|------------------------|---------------------|------------------------------|
+### 2.2 Шүүх дэх ярианы стратеги ба дараалал
+(Хуралдааныг хэрхэн эхлэх, ямар дарааллаар аргумент дэвшүүлэх, хэзээ ямар нотлох баримт гаргах, хэр их цаг авах стратеги)
 
 ---
 
-## 4. Нотлох баримтын шинжилгээ
+## 3. Хуулийн гүнзгий шинжилгээ
 
-| Нотлох баримт | Юу нотлох | Хуралдаанд хэрхэн ашиглах | Төлөв / Байршил |
-|---------------|-----------|--------------------------|----------------|
+### 3.1 Хамаарах хуулийн заалтууд
+
+| Хуулийн нэр | Зүйл, хэсэг, заалт | Агуулга товч | Бидний хэрэгт хэрхэн хамаарах | Хэрэглэх аргумент |
+|-------------|-------------------|-------------|-------------------------------|------------------|
+
+### 3.2 Дээд шүүх / Давж заалдах шатны шийдвэрүүд
+(Ижил төстэй маргааны Монгол улсын дээд шүүх, давж заалдах шатны шийдвэрүүд — материалд байгаа болон энэ маргааны төрөлд хамаарах)
+
+| Шийдвэрийн № / Он | Шүүх | Хэргийн тойм | Бидний хэрэгт ашиглах арга |
+|-------------------|------|-------------|--------------------------|
+
+### 3.3 Хуулийн зөрчил / Тайлбарын маргаан
+(Хуулийн заалтыг тал бүр өөрөөр тайлбарлах боломжтой газрыг тодорхойлж, бидэнд ашигтай тайлбарыг обгоруулна)
 
 ---
 
-## 5. Хариуцагч / гуравдагч этгээдэд асуух асуулт
+## 4. Нотлох баримтын дэлгэрэнгүй шинжилгээ
 
-(Этгээд бүрд тусдаа хэсэг. Асуулт бүр стратегийн зорилготой — хариуцагчид тохиромжгүй баримт гаргуулах, зөрчилтэй мэдэгдэл хийлгэх зорилготой)
+| № | Нотлох баримт | Юу нотлох | Нотлох хүч (1–5) | Хуралдаанд хэрхэн ашиглах | Болзошгүй эсэргүүцэл | Бидний хариу |
+|---|--------------|-----------|-----------------|--------------------------|---------------------|------------|
+
+---
+
+## 5. Нөгөө талд тавих стратегийн асуулт
+
+(Шүүх дэх мэтгэлцээнд ашиглах — хариуцагч/нэхэмжлэгчид буруутгах нотлох баримт гаргуулах, зөрчилтэй мэдэгдэл хийлгэх зорилготой. Асуулт бүр стратегийн зорилготой байна.)
 
 ### [Этгээдийн нэр]-д асуух асуулт:
-1. [Стратегийн асуулт — баримт, огноо хамт]
+1. **[Асуулт]**
+   - *Зорилго:* [стратегийн ач холбогдол — ямар хариу авах, ямар баримт гаргуулах]
+   - *Хүлээгдэх хариу:* [тэд юу хариулах магадлалтай]
+   - *Дараагийн асуулт (follow-up):* [тэдний хариунд тулгуурлан ...]
 
 ---
 
-## 6. Эсрэг талын аргумент ба бидний хариу
+## 6. Эсрэг талын аргументуудыг урьдчилан няцаах
 
-| Эсрэг талын аргумент | Бидний хариу | Ашиглах нотлох баримт |
-|---------------------|-------------|----------------------|
+| Эсрэг талын аргумент | Тэд ямар нотлох баримт дурдах вэ | Бидний хариу эсэргүүцэл | Ашиглах нотлох баримт | Хуулийн үндэслэл |
+|---------------------|--------------------------------|------------------------|---------------------|----------------|
 
 ---
 
 ## 7. Шүүгчийн болзошгүй асуулт ба бэлтгэл хариу
 
+(Шүүгч маргааны гол цэгт болон нотлох баримтын талаар асуух болзошгүй асуултуудыг урьдчилан бэлдэнэ. Хариу бүр нотлох баримт, хуулийн заалтад үндэслэнэ.)
+
 1. **Асуулт:** [шүүгчийн болзошгүй асуулт]
-   **Хариу:** [бэлтгэсэн хариу — нотлох баримт, хуулийн заалт хамт]
+   - **Хариу:** [бэлтгэсэн хариу — нарийн дэлгэрэнгүй, нотлох баримт, хуулийн заалт хамт]
+   - **Хариуны стратеги:** [хэрхэн тайлбарлах, шүүгчийн санааг ойлгох талаас нь хандах арга]
 
 ---
 
-## 8. Эрсдэл, сул тал ба бэлтгэл
+## 8. Эрсдэлийн шинжилгээ ба хамгаалалтын бэлтгэл
 
-| Эрсдэл / Сул тал | Ноцтой байдал | Эрсдэл бууруулах арга |
-|------------------|--------------|----------------------|
+| Эрсдэл / Сул тал | Ноцтой байдал (🔴🟡🟢) | Тухайн эрсдэл яагаад үүсэх | Урьдчилан сэргийлэх арга | Эрсдэл биелсэн тохиолдолд хийх алхам |
+|------------------|----------------------|--------------------------|------------------------|--------------------------------------|
 
 ---
 
-## 9. Хуралдааны дараа хийх ажиллагаа
+## 9. Хуралдааны явцад анхаарах зүйлс
 
-(Хуралдааны үр дүнд хамааран хийх ёстой алхамуудыг жагсаана)`;
+### 9.1 Шүүгч / Шүүх танхимын онцлог
+(Энэ шүүгч, энэ шүүхийн практик, хэвшил, хандлагыг харгалзана — мэдэгдэхгүй бол ерөнхий зөвлөмж)
+
+### 9.2 Цаг хугацааны менежмент
+(Хуралдаанд хэр их цаг авах боломжтой, ямар дарааллаар, хэр хурдтай аргумент дэвшүүлэх)
+
+### 9.3 Хуралдааны дараа хийх ажиллагаа
+
+(Боломжит үр дүн тус бүрт хийх алхамуудыг жагсаана — шийдвэр таалагдсан / таалагдаагүй / хойшилсон тохиолдол бүрт)
+
+| Үр дүн | Дараагийн алхам | Хугацаа | Хариуцах |
+|--------|----------------|---------|---------|`;
+
+  // Hearing-д бүрэн doc-г ашиглана (chunk боломжгүй учраас том материалд сонет ашиглаж 14k character авна)
+  const docsForHearing = docs.length > 16000 ? docs.slice(0, 16000) + '\n\n[...Материал урт тул эхний хэсгийг шинжилнэ. "Үргэлжлүүлэх" горимоор үлдсэн хэсгийг нэмж болно.]' : docs;
 
   const prompt = isCont && prevWork
-    ? `Та туршлагатай өмгөөлөгч юм. Шүүх хуралдааны дотоод бэлтгэлийн материалыг үргэлжлүүлж, шинэ материалаар баяжуулна уу.
+    ? `Та туршлагатай, мэргэшсэн өмгөөлөгч юм. Шүүх хуралдааны дотоод бэлтгэлийн материалыг шинэ материалаар ГҮНЗГИЙРҮҮЛЖ, БАЯЖУУЛНА уу.
 
 ${baseInstructions}
 
@@ -1798,15 +2068,15 @@ ${baseInstructions}
 
 ӨМНӨХ БЭЛТГЭЛ:
 ---
-${prevWork.slice(0,7000)}
+${prevWork}
 ---
 
 НЭМЭЛТ МАТЕРИАЛ:
 ---
-${docs.slice(0,7000)}
+${docsForHearing}
 ---
 
-ЗААВАР: Өмнөх бэлтгэлийг үндэс болгон авна. Шинэ материалаас олдсон мэдээллээр хэсэг бүрийг нэмж, сайжруулж, гүнзгийрүүлнэ. Хасах зүйлгүй — зөвхөн нэмэх, боловсруулах. Доорх бүрэн загварын дагуу БҮРЭН дүүрэн гаргана уу:
+ЗААВАР: Өмнөх бэлтгэлийг үндэс болго. Шинэ материалаас олдсон БҮХИЙ Л мэдээллээр хэсэг бүрийг нэмж, гүнзгийрүүлж, аргументуудыг бататгана. Хасах зүйлгүй — зөвхөн нэмэх, сайжруулах, нарийвчлах. Дэлгэрэнгүй, мэргэжлийн хэмжээний шинжилгээ хийнэ. Доорх бүрэн загварын дагуу БҮРЭН гаргана уу:
 
 # ӨМГӨӨЛЛИЙН ДОТООД БЭЛТГЭЛ
 
@@ -1822,7 +2092,7 @@ ${docs.slice(0,7000)}
 | Нэхэмжлэлийн шаардлага | |
 | Бэлтгэсэн | ${today_mn} |
 ${templateSections}`
-    : `Та туршлагатай, мэргэшсэн өмгөөлөгч юм. Доорх хэргийн материалд үндэслэн шүүх хуралдааны өмгөөллийн дотоод бэлтгэлийн материал боловсруулна уу.
+    : `Та туршлагатай, мэргэшсэн Монгол Улсын өмгөөлөгч юм. Доорх хэргийн материалд үндэслэн шүүх хуралдааны ГҮНЗГИЙ, МЭРГЭЖЛИЙН дотоод бэлтгэлийн материал боловсруулна уу.
 
 ${baseInstructions}
 
@@ -1831,10 +2101,10 @@ ${baseInstructions}
 
 ХЭРГИЙН МАТЕРИАЛ:
 ---
-${docs.slice(0,14000)}
+${docsForHearing}
 ---
 
-Доорх загварын дагуу БҮРЭН дүүрэн, НАРИЙН ДЭЛГЭРЭНГҮЙ боловсруулна уу:
+Доорх загварын дагуу БҮРЭН дүүрэн, НАРИЙН ДЭЛГЭРЭНГҮЙ боловсруулна уу. Хэсэг бүрийг мэргэжлийн хуульчийн хэмжээнд гүнзгийрүүлнэ — гадаргуугийн тайлбараар хязгаарлахгүй. Аргумент бүр нотлох баримт + хуулийн заалт + практик стратегиар дэмжигдэнэ:
 
 # ӨМГӨӨЛЛИЙН ДОТООД БЭЛТГЭЛ
 
@@ -1855,7 +2125,7 @@ ${templateSections}`;
   loading('kh-load','kh-res',true);
   document.getElementById('kh-res').classList.add('hidden');
   try {
-    const r = await claude(model, prompt, null, null, 8192);
+    const r = await claude(model, prompt, null, null, 16000);
     renderMD('kh-out', r);
     loading('kh-load','kh-res',false);
     document.getElementById('kh-res').scrollIntoView({behavior:'smooth'});
@@ -2258,10 +2528,8 @@ async function driveLoadReg() {
   }
 }
 
-// ══════════════════════════════════
-// NEWS
-// ══════════════════════════════════
-async function fetchNewsFromWeb(scope, cat) {
+// (News section removed)
+async function _removed_fetchNewsFromWeb(scope, cat) {
   // allorigins.win proxy-аар мэдээний сайтуудаас HTML татаж текст гаргана
   const PROXY = 'https://api.allorigins.win/raw?url=';
 
@@ -2325,7 +2593,7 @@ async function fetchNewsFromWeb(scope, cat) {
   return results;
 }
 
-async function doNews() {
+async function _removed_doNews() {
   const cat   = document.getElementById('nw-cat').value;
   const scope = document.getElementById('nw-scope').value;
   const model = document.getElementById('nw-m').value;
